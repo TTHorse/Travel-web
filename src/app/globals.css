@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+/* —— 全局主题（暗色旅游网站） —— */
+@theme inline {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-primary: #fb923c;
+  --color-primary-light: #fdba74;
+  --color-surface: rgba(255, 255, 255, 0.05);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-muted: rgba(255, 255, 255, 0.4);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-noto-sc), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* —— 全局基础样式 —— */
+html {
+  scroll-behavior: auto; /* Lenis 接管滚动 */
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* —— 自定义滚动条（用于非 Lenis 区域） —— */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* —— Mapbox Popup 样式覆盖 —— */
+.mapboxgl-popup-content {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: #fff !important;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+/* —— Markdown 内容样式 —— */
+.prose h2 {
+  @apply text-2xl font-bold mt-10 mb-4 text-white;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold mt-8 mb-3 text-white/90;
+}
+
+.prose p {
+  @apply text-white/70 leading-relaxed mb-4;
+}
+
+.prose a {
+  @apply text-orange-400 hover:text-orange-300 underline underline-offset-2;
+}
+
+.prose ul {
+  @apply list-disc list-inside space-y-1 mb-4 text-white/70;
+}
+
+.prose ol {
+  @apply list-decimal list-inside space-y-1 mb-4 text-white/70;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-orange-500 pl-4 my-4 text-white/60 italic;
+}
+
+.prose img {
+  @apply rounded-lg my-6;
+}
+
+.prose code {
+  @apply bg-white/10 rounded px-1.5 py-0.5 text-sm text-orange-300 font-mono;
+}
+
+.prose pre {
+  @apply bg-white/5 rounded-lg p-4 overflow-x-auto my-4;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0 text-white/80;
+}
+
+/* —— 动画工具类 —— */
+@utility animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+@utility animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+@utility animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+@utility animate-delay-400 {
+  animation-delay: 400ms;
+}
