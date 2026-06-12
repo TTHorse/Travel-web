@@ -292,6 +292,103 @@ Travel-web/
 npm run dev
 ```
 
+---
+
+### 阶段 10：3D 地球实现（Mapbox Globe）
+
+**需求来源：** `doc/Earth.md` — 在地图页面增加可滚动/缩放的 3D 地球，标记云南为"已去过"
+
+**方案选型：** 方案 A — Mapbox GL JS 3D Globe（`projection: 'globe'`）
+- 选择理由：零新依赖、改动极小（~100 行）、原生手势体验、与现有 MapPoint 体系 100% 兼容
+- 备选方案 B（Three.js/R3F）留作后续升级路径
+
+**创建/修改的文件：**
+
+1. **`src/lib/map-constants.ts`**（新建）
+   - `YUNNAN_GEOJSON` — 云南简化多边形（FeatureCollection，30 个坐标点勾勒云南轮廓）
+   - `EARTH_DEFAULT_VIEW` — 地球初始视角（`longitude: 102, latitude: 25, zoom: 4, pitch: 30`）
+   - `YUNNAN_CENTER` — 云南中心经纬度
+   - `YUNNAN_COLORS` — 云南区域配色（fill `#fb923c`、border `#fdba74`）
+   - `GLOBE_FOG` — 大气层 fog 配置（星空黑 + 大气蓝）
+
+2. **`src/components/map/YunnanOverlay.tsx`**（新建）
+   - `YunnanMarker` 组件：脉冲呼吸动画外圈（`animate-ping`）+ 实心橙色标记点 + `云南 ✓` 文字标签
+   - 位于云南中心坐标 `(102.0, 25.0)`
+
+3. **`src/components/map/WorldMap.tsx`**（改造）
+   - 新增 `projection="globe"` 启用 3D 地球投影
+   - 新增 `fog={GLOBE_FOG}` 大气层效果（地平线雾化 + 星空背景）
+   - 新增 `Source` + `Layer`（FillLayer + LineLayer）绘制云南区域
+   - 集成 `YunnanMarker` 脉冲标记
+   - 新增 `resetView()` 方法，一键复位到云南视角
+   - 新增复位按钮（SVG 地球图标 + 毛玻璃样式）
+   - 优化 `flyToPoint()`：添加 `curve: 1.5`、`pitch: 45`，产生环绕地球的飞行曲线
+   - 启用手势交互：`dragRotate`、`touchZoomRotate`、`touchPitch`、`scrollZoom`、`doubleClickZoom`
+   - `pitchWithRotate={false}` 避免旋转时意外改变俯仰角
+
+4. **`src/app/map/page.tsx`** — 无需改动（复位按钮已内置在 WorldMap 中）
+
+5. **`doc/Earth.md`**（更新）— 完整可行性分析 + 实现方案文档
+
+**关键技术点：**
+- Mapbox GL JS `projection: 'globe'` 自 v2.6 起支持，当前 v3.24 稳定
+- Fog 使用 `color`（近地星空黑）+ `high-color`（大气顶部蓝）实现太空俯瞰效果
+- 云南 GeoJSON 采用 30 点简化多边形，低缩放级别精度足够；后续可替换为精确省级行政区划数据
+- FillLayer `fill-opacity: 0.3` + LineLayer `line-blur: 4` 产生柔和的发光区域效果
+- `animate-ping` 是 Tailwind 内置关键帧动画，无需自定义定义
+
+**遇到的问题：** 无 — TypeScript 编译零错误，改动均在现有架构内
+
+**构建验证：**
+- `npx tsc --noEmit` ✅ 通过
+- 文件变更量：~100 行（分布在 4 个文件）
+
+---
+
+---
+
+### 阶段 11：切换到 Three.js EarthGlobe（方案 B）
+
+**背景**：Mapbox 注册受阻，无法获取 Token，方案 A（Mapbox Globe）不可用。切换到方案 B — Three.js + react-three-fiber 自建 3D 地球，零外部 API 依赖。
+
+**新增依赖：**
+- `three` — 核心 3D 引擎
+- `@react-three/fiber` — React 渲染器
+- `@react-three/drei` — 工具集（OrbitControls, useTexture, shaderMaterial）
+
+**创建/修改的文件：**
+
+1. **`src/components/map/EarthGlobe.tsx`**（新建，~230 行）
+   - `latLngToVec3()` — 经纬度→3D 球面坐标转换
+   - `Atmosphere` — 自定义 ShaderMaterial，Fresnel 边缘发光（`pow(1 - dot(viewDir, normal), 3.0)`）
+   - `EarthSphere` — 球体 MeshStandardMaterial + NASA Blue Marble 纹理（从 threejs.org CDN 加载）
+   - `MapPointMarkers` — 批量渲染 DB 标记点，根据 `type` 着色（visited/highlight/wishlist 三色方案）
+   - `YunnanGlow` — 云南脉冲光环（useFrame 驱动 scale/opacity 正弦波变化）
+   - `EarthScene` — 场景组合（光照 + 地球 + 大气 + 标记 + 云南 + OrbitControls）
+   - 轨道控制：autoRotate 0.3rad/s、damping 0.08、缩放范围 3.5x–12x
+   - 相机初始位置 `[2.5, 1.2, 5]`，fov 40°，面朝亚洲
+   - SSR 兼容：`"use client"` + `Suspense` + 加载提示
+
+2. **`src/app/map/page.tsx`**（修改 2 行）
+   - `import { WorldMap }` → `import { EarthGlobe }`
+   - `<WorldMap ...>` → `<EarthGlobe ...>`
+
+3. **`src/components/map/WorldMap.tsx`** — 保留不变（Mapbox Token 就绪后可切换回去）
+
+**关键技术决策：**
+- 大气层使用自定义 ShaderMaterial 而非透明 MeshBasicMaterial，获得更真实的光晕
+- 云南标记使用 useFrame 实时动画而非 CSS animation（3D 场景内 CSS 不可用）
+- 标记点沿球面法线方向偏移（`MARKER_RADIUS = 2.04`，略大于地球半径），避免 z-fighting
+- OrbitControls 的 `target` 锁定在原点，确保旋转始终围绕地球
+
+**遇到的问题：** 无 — TypeScript 编译零错误，组件结构和作用域分离清晰
+
+**构建验证：**
+- `npx tsc --noEmit` ✅ 通过
+- 新增代码 ~230 行（1 个新文件 + 页面 2 行修改）
+
+---
+
 ### 待实现功能（按优先级）
 
 | 功能 | 优先级 |
@@ -300,9 +397,11 @@ npm run dev
 | Cloudinary 图片上传组件 | 高 |
 | 评论审核后台 | 中 |
 | 响应式适配微调 | 中 |
+| 3D 地球点击标记弹出信息 | 中 |
+| 3D 地球添加飞行轨迹弧线 | 低 |
 | 网站分析（Umami/Vercel Analytics） | 低 |
 | RSS Feed | 低 |
 
 ---
 
-*日志生成时间：2026-06-12*
+*日志更新时间：2026-06-12*

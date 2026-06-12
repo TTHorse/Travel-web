@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WorldMap } from "@/components/map/WorldMap";
+import { EarthGlobe } from "@/components/map/EarthGlobe";
 import { getAllMapPoints, getTravelStats } from "@/lib/data/trips";
 import type { MapPoint } from "@/types/map";
 
@@ -29,7 +29,7 @@ export default async function MapPage() {
 
   return (
     <div className="relative h-screen pt-16">
-      <WorldMap points={points} className="h-full w-full" />
+      <EarthGlobe points={points} className="h-full w-full" />
 
       {/* 侧边栏统计 */}
       <div className="absolute top-20 left-4 z-10 bg-black/75 backdrop-blur-xl rounded-xl p-5 text-white min-w-[180px] border border-white/10 hidden md:block">

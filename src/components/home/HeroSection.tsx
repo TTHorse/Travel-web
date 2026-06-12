@@ -14,12 +14,15 @@ export function HeroSection() {
 
   useGSAP(
     () => {
+      const trigger = containerRef.current;
+      if (!trigger) return;
+
       // 左图向上移动
       gsap.to(".hero-left", {
         yPercent: -20,
         ease: "none",
         scrollTrigger: {
-          trigger: ".hero-container",
+          trigger,
           start: "top top",
           end: "bottom top",
           scrub: true,
@@ -31,7 +34,7 @@ export function HeroSection() {
         yPercent: 20,
         ease: "none",
         scrollTrigger: {
-          trigger: ".hero-container",
+          trigger,
           start: "top top",
           end: "bottom top",
           scrub: true,
@@ -43,7 +46,7 @@ export function HeroSection() {
         opacity: 0,
         y: 100,
         scrollTrigger: {
-          trigger: ".hero-container",
+          trigger,
           start: "top top",
           end: "bottom top",
           scrub: true,
@@ -66,6 +69,7 @@ export function HeroSection() {
           fill
           className="object-cover"
           priority
+          loading="eager"
           sizes="50vw"
         />
         <div className="absolute inset-0 bg-black/45" />
