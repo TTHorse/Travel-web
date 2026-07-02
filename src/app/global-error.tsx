@@ -2,10 +2,10 @@
 
 export default function GlobalError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
   return (
     <html>
@@ -16,7 +16,7 @@ export default function GlobalError({
             页面加载遇到了错误，请刷新后重试。
           </p>
           <button
-            onClick={() => reset()}
+            onClick={() => unstable_retry()}
             className="bg-white text-black px-6 py-2 rounded-full font-medium hover:bg-white/90 transition-colors"
           >
             重试

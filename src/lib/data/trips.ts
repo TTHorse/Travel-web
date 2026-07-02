@@ -42,33 +42,78 @@ export async function getPublishedTrips(): Promise<TripSummary[]> {
     .from("trips")
     .select(
       `id, slug, title, destination, country,
-       cover_image, description, start_date, tags,
-       photos (url, thumbnail_url, width, height)`
+       cover_image, description, start_date, tags`
     )
     .eq("is_published", true)
-    .order("start_date", { ascending: false })
-    .order("sort_order", { referencedTable: "photos", ascending: true });
+    .order("start_date", { ascending: false });
 
   if (error) {
     console.error("Error fetching trips:", error);
     return [];
   }
 
-  return (data ?? []).filter(isTripSummary) as TripSummary[];
+  // 批量获取所有 trips 的 photos，单独查询避免 RLS 关联失败
+  const tripIds = (data ?? []).map((t) => t.id);
+  const photosMap = new Map<string, TripSummary["photos"]>();
+
+  if (tripIds.length > 0) {
+    const { data: allPhotos } = await supabase
+      .from("photos")
+      .select("trip_id, url, thumbnail_url, width, height")
+      .in("trip_id", tripIds)
+      .order("sort_order", { ascending: true });
+
+    for (const p of allPhotos ?? []) {
+      const list = photosMap.get(p.trip_id) ?? [];
+      list.push({
+        url: p.url,
+        thumbnail_url: p.thumbnail_url,
+        width: p.width,
+        height: p.height,
+      });
+      photosMap.set(p.trip_id, list);
+    }
+  }
+
+  return (data ?? []).map((t) => ({
+    ...t,
+    photos: photosMap.get(t.id) ?? [],
+  })).filter(isTripSummary) as TripSummary[];
 }
 
 export async function getTripBySlug(slug: string): Promise<Trip | null> {
   const supabase = await createServerSupabase();
 
+  // 单独查询 trip，避免 join photos/map_points 时因 RLS 策略导致整个查询失败
   const { data, error } = await supabase
     .from("trips")
-    .select("*, photos (*), map_points (*)")
+    .select("*")
     .eq("slug", slug)
     .eq("is_published", true)
     .single();
 
-  if (error) return null;
-  return isTrip(data) ? data : null;
+  if (error || !data) return null;
+  if (!isTrip(data)) return null;
+
+  // 分别查询关联数据，各自容错
+  const [photosResult, mapPointsResult] = await Promise.all([
+    supabase
+      .from("photos")
+      .select("*")
+      .eq("trip_id", data.id)
+      .order("sort_order"),
+    supabase
+      .from("map_points")
+      .select("*")
+      .eq("trip_id", data.id)
+      .order("sort_order"),
+  ]);
+
+  return {
+    ...data,
+    photos: photosResult.data ?? [],
+    map_points: mapPointsResult.data ?? [],
+  };
 }
 
 export async function getAllMapPoints(): Promise<MapPoint[]> {
