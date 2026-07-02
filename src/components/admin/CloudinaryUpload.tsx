@@ -14,7 +14,7 @@ function UploadWidget({ onChange }: { onChange: (url: string) => void }) {
   const widgetRef = useRef<unknown>(null);
 
   const openWidget = useCallback(() => {
-    const w = (window as Record<string, unknown>).cloudinary as Record<string, unknown> | undefined;
+    const w = (window as unknown as Record<string, unknown>).cloudinary as Record<string, unknown> | undefined;
     if (!w) return;
 
     if (!widgetRef.current) {
