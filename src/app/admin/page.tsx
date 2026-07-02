@@ -50,14 +50,14 @@ export default async function AdminPage() {
         </Link>
 
         <Link
-          href="/gallery"
+          href="/admin/gallery"
           className="flex items-center gap-4 p-6 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/[0.07] transition-all"
         >
           <div className="w-12 h-12 rounded-lg bg-blue-400/10 flex items-center justify-center">
             <Image size={24} className="text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">图片管理</h3>
+            <h3 className="font-semibold text-white">画廊管理</h3>
             <p className="text-white/40 text-sm">上传和管理旅行照片</p>
           </div>
         </Link>

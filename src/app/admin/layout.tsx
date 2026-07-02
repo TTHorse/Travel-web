@@ -1,6 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import Link from "next/link";
-import { LayoutDashboard, FileText, Plus } from "lucide-react";
+import { LayoutDashboard, FileText, Plus, Image } from "lucide-react";
 import { AdminLogoutButton } from "./logout-button";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,7 @@ export default async function AdminLayout({
     { href: "/admin", label: "总览", icon: LayoutDashboard },
     { href: "/admin/trips", label: "行程管理", icon: FileText },
     { href: "/admin/trips/new", label: "新建行程", icon: Plus },
+    { href: "/admin/gallery", label: "画廊管理", icon: Image },
   ];
 
   return (

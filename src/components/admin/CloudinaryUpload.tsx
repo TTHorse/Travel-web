@@ -1,27 +1,82 @@
 "use client";
 
-import { useState } from "react";
-import { CldUploadWidget } from "next-cloudinary";
-import { Upload, X, Loader2 } from "lucide-react";
-import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
+import { useRef, useCallback } from "react";
+import { Upload, X } from "lucide-react";
+import Script from "next/script";
 
 interface CloudinaryUploadProps {
   value: string;
   onChange: (url: string) => void;
 }
 
-export function CloudinaryUpload({ value, onChange }: CloudinaryUploadProps) {
-  const [uploading, setUploading] = useState(false);
+// Cloudinary 原生 upload widget — 不依赖 next-cloudinary 的封装
+function UploadWidget({ onChange }: { onChange: (url: string) => void }) {
+  const widgetRef = useRef<unknown>(null);
 
-  function handleUpload(result: CloudinaryUploadWidgetResults) {
-    if (result.event === "success" && result.info && typeof result.info === "object" && "secure_url" in result.info) {
-      onChange(result.info.secure_url as string);
-      setUploading(false);
+  const openWidget = useCallback(() => {
+    const w = (window as Record<string, unknown>).cloudinary as Record<string, unknown> | undefined;
+    if (!w) return;
+
+    if (!widgetRef.current) {
+      widgetRef.current = (w.createUploadWidget as Function)(
+        {
+          cloudName: "ncgzlyq5",
+          uploadPreset: "travel-web-uploads",
+          maxFiles: 1,
+          sources: ["local", "url", "camera"],
+          styles: {
+            palette: {
+              window: "#171717",
+              sourceBg: "#262626",
+              windowBorder: "#404040",
+              tabIcon: "#a3a3a3",
+              inactiveTabIcon: "#525252",
+              menuIcons: "#a3a3a3",
+              link: "#fb923c",
+              action: "#fb923c",
+              inProgress: "#fb923c",
+              complete: "#4ade80",
+              error: "#f87171",
+              textDark: "#ffffff",
+              textLight: "#a3a3a3",
+            },
+          },
+        },
+        (_error: unknown, result: Record<string, unknown>) => {
+          if (result?.event === "success" && result?.info) {
+            const info = result.info as Record<string, unknown>;
+            if (info.secure_url) {
+              onChange(info.secure_url as string);
+            }
+          }
+        }
+      );
     }
-  }
+
+    (widgetRef.current as Record<string, () => void>).open();
+  }, [onChange]);
 
   return (
+    <button
+      type="button"
+      onClick={openWidget}
+      className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.04] text-white/50 hover:text-white/70 transition-all"
+    >
+      <Upload size={18} />
+      上传封面图
+    </button>
+  );
+}
+
+export function CloudinaryUpload({ value, onChange }: CloudinaryUploadProps) {
+  return (
     <div className="space-y-2">
+      {/* Cloudinary widget 脚本 */}
+      <Script
+        src="https://upload-widget.cloudinary.com/global/all.js"
+        strategy="afterInteractive"
+      />
+
       {value ? (
         <div className="relative inline-block group">
           <img
@@ -39,30 +94,7 @@ export function CloudinaryUpload({ value, onChange }: CloudinaryUploadProps) {
           </button>
         </div>
       ) : (
-        <CldUploadWidget
-          uploadPreset="travel-web-uploads"
-          onUpload={(result) => handleUpload(result)}
-          onOpen={() => setUploading(false)}
-        >
-          {({ open }) => (
-            <button
-              type="button"
-              onClick={() => {
-                setUploading(true);
-                open();
-              }}
-              disabled={uploading}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.04] text-white/50 hover:text-white/70 transition-all disabled:opacity-50"
-            >
-              {uploading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Upload size={18} />
-              )}
-              {uploading ? "上传中..." : "上传封面图"}
-            </button>
-          )}
-        </CldUploadWidget>
+        <UploadWidget onChange={onChange} />
       )}
 
       {/* 手动输入 URL 备选 */}

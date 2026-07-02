@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { MobileMenu } from "./MobileMenu";
@@ -81,6 +81,17 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+
+              {/* 登录按钮（未登录时可见） */}
+              {!loggedIn && (
+                <Link
+                  href="/admin/login"
+                  className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm text-white/70 hover:text-white border border-white/20 hover:border-white/40 transition-colors"
+                >
+                  <LogIn size={15} />
+                  登录
+                </Link>
+              )}
 
               {/* 控制台按钮（仅登录后可见） */}
               {loggedIn && (

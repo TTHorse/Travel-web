@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, LayoutDashboard } from "lucide-react";
+import { X, LayoutDashboard, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
@@ -58,6 +58,18 @@ export function MobileMenu({ open, onClose, loggedIn }: MobileMenuProps) {
                   {link.label}
                 </Link>
               ))}
+
+              {/* 登录（未登录时可见） */}
+              {!loggedIn && (
+                <Link
+                  href="/admin/login"
+                  className="mt-2 flex items-center gap-2 px-4 py-3 rounded-xl text-base text-white/60 hover:text-white border border-white/20 hover:border-white/40 transition-colors"
+                  onClick={onClose}
+                >
+                  <LogIn size={18} />
+                  登录
+                </Link>
+              )}
 
               {/* 控制台（仅登录可见） */}
               {loggedIn && (
