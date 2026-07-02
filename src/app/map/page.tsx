@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
-import { EarthGlobe } from "@/components/map/EarthGlobe";
+import { EarthGlobeWrapper } from "@/components/map/EarthGlobeWrapper";
 import { getAllMapPoints, getTravelStats } from "@/lib/data/trips";
+import type { Metadata } from "next";
 import type { MapPoint } from "@/types/map";
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default async function MapPage() {
 
   return (
     <div className="relative h-screen pt-16">
-      <EarthGlobe points={points} className="h-full w-full" />
+      <EarthGlobeWrapper points={points} className="h-full w-full" />
 
       {/* 侧边栏统计 */}
       <div className="absolute top-20 left-4 z-10 bg-black/75 backdrop-blur-xl rounded-xl p-5 text-white min-w-[180px] border border-white/10 hidden md:block">

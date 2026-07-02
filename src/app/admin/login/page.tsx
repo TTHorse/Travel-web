@@ -28,7 +28,14 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
 
-    const { error } = await getSupabase().auth.signInWithPassword({
+    const supabase = getSupabase();
+    if (!supabase) {
+      setError("Supabase 未配置，请检查环境变量");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });

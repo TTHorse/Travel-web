@@ -29,8 +29,11 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 保护 /admin 路由
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  // 保护 /admin 路由（排除登录页本身）
+  if (
+    request.nextUrl.pathname.startsWith("/admin") &&
+    request.nextUrl.pathname !== "/admin/login"
+  ) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";

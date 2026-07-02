@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { HeroSection } from "@/components/home/HeroSection";
-import { CategoriesSection } from "@/components/home/CategoriesSection";
+import { HeroSectionWrapper } from "@/components/home/HeroSectionWrapper";
+import { CategoriesSectionWrapper } from "@/components/home/CategoriesSectionWrapper";
 import { StatsCounter } from "@/components/home/StatsCounter";
 import { RecentTrips } from "@/components/home/RecentTrips";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
-      <CategoriesSection />
+      <HeroSectionWrapper />
+      <CategoriesSectionWrapper />
       <Suspense
         fallback={<Skeleton className="h-32 max-w-4xl mx-auto my-20" />}
       >

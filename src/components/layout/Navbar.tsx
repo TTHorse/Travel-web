@@ -3,16 +3,19 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { MobileMenu } from "./MobileMenu";
+import { createClient } from "@/lib/supabase/client";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   const pathname = usePathname();
 
+  // 滚动检测
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -20,10 +23,28 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // 关闭移动菜单（路由切换时）
+  // 路由切换时关闭移动菜单
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // 检查登录状态
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedIn(!!data.session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const isHome = pathname === "/";
 
@@ -60,6 +81,17 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+
+              {/* 控制台按钮（仅登录后可见） */}
+              {loggedIn && (
+                <Link
+                  href="/admin"
+                  className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm text-orange-400 border border-orange-400/30 hover:bg-orange-400/10 transition-colors"
+                >
+                  <LayoutDashboard size={15} />
+                  控制台
+                </Link>
+              )}
             </div>
 
             {/* 移动端汉堡按钮 */}
@@ -75,7 +107,11 @@ export function Navbar() {
       </nav>
 
       {/* 移动端菜单 */}
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        loggedIn={loggedIn}
+      />
     </>
   );
 }

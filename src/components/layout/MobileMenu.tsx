@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { X, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
@@ -10,9 +10,10 @@ import { NAV_LINKS } from "@/lib/constants";
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
+  loggedIn: boolean;
 }
 
-export function MobileMenu({ open, onClose }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, loggedIn }: MobileMenuProps) {
   const pathname = usePathname();
 
   return (
@@ -57,6 +58,18 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   {link.label}
                 </Link>
               ))}
+
+              {/* 控制台（仅登录可见） */}
+              {loggedIn && (
+                <Link
+                  href="/admin"
+                  className="mt-2 flex items-center gap-2 px-4 py-3 rounded-xl text-base text-orange-400 border border-orange-400/20 hover:bg-orange-400/10 transition-colors"
+                  onClick={onClose}
+                >
+                  <LayoutDashboard size={18} />
+                  控制台
+                </Link>
+              )}
             </nav>
           </motion.div>
         </>

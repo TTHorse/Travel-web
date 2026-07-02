@@ -2,6 +2,39 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import type { Trip, TripSummary } from "@/types/trip";
 import type { MapPoint } from "@/types/map";
 
+function isTripSummary(obj: unknown): obj is TripSummary {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "slug" in obj &&
+    "title" in obj &&
+    "destination" in obj &&
+    "country" in obj
+  );
+}
+
+function isTrip(obj: unknown): obj is Trip {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "slug" in obj &&
+    "title" in obj &&
+    "destination" in obj &&
+    "country" in obj &&
+    "content" in obj
+  );
+}
+
+function isMapPoint(obj: unknown): obj is MapPoint {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "name" in obj &&
+    "latitude" in obj &&
+    "longitude" in obj
+  );
+}
+
 export async function getPublishedTrips(): Promise<TripSummary[]> {
   const supabase = await createServerSupabase();
 
@@ -21,7 +54,7 @@ export async function getPublishedTrips(): Promise<TripSummary[]> {
     return [];
   }
 
-  return data as unknown as TripSummary[];
+  return (data ?? []).filter(isTripSummary) as TripSummary[];
 }
 
 export async function getTripBySlug(slug: string): Promise<Trip | null> {
@@ -35,7 +68,7 @@ export async function getTripBySlug(slug: string): Promise<Trip | null> {
     .single();
 
   if (error) return null;
-  return data as unknown as Trip;
+  return isTrip(data) ? data : null;
 }
 
 export async function getAllMapPoints(): Promise<MapPoint[]> {
@@ -46,7 +79,7 @@ export async function getAllMapPoints(): Promise<MapPoint[]> {
     .select("*")
     .order("sort_order");
 
-  return (data || []) as MapPoint[];
+  return (data ?? []).filter(isMapPoint) as MapPoint[];
 }
 
 export async function getTravelStats(): Promise<{
@@ -56,28 +89,25 @@ export async function getTravelStats(): Promise<{
 }> {
   const supabase = await createServerSupabase();
 
-  const { count: totalTrips } = await supabase
+  // 合并 trips 总数和国家去重为一次查询
+  const { data: trips, error } = await supabase
     .from("trips")
-    .select("*", { count: "exact", head: true })
+    .select("country, is_published")
     .eq("is_published", true);
 
-  const { data: countries } = await supabase
-    .from("trips")
-    .select("country")
-    .eq("is_published", true);
+  const publishedTrips = (trips ?? []).filter((t) => t.is_published);
+  const uniqueCountries = new Set(publishedTrips.map((t) => t.country)).size;
 
+  // cities 来自不同的表，仍需单独查询
   const { data: cities } = await supabase
     .from("map_points")
     .select("name")
     .eq("type", "visited");
 
-  const uniqueCountries = new Set(
-    (countries || []).map((c) => c.country)
-  ).size;
-  const uniqueCities = new Set((cities || []).map((c) => c.name)).size;
+  const uniqueCities = new Set((cities ?? []).map((c) => c.name)).size;
 
   return {
-    totalTrips: totalTrips || 0,
+    totalTrips: publishedTrips.length,
     totalCountries: uniqueCountries,
     totalCities: uniqueCities,
   };

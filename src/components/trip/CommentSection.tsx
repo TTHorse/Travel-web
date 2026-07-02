@@ -1,22 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Send, User, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import type { Comment } from "@/types/comment";
 
 const commentSchema = z.object({
-  author_name: z
-    .string()
-    .min(1, "请输入昵称")
-    .max(50, "昵称不能超过50字"),
-  content: z
-    .string()
-    .min(1, "请输入评论内容")
-    .max(1000, "评论不能超过1000字"),
+  author_name: z.string().min(1, "请输入昵称").max(50, "昵称不能超过50字"),
+  content: z.string().min(1, "请输入评论内容").max(1000, "评论不能超过1000字"),
 });
 
 type CommentFormData = z.infer<typeof commentSchema>;
@@ -26,7 +19,7 @@ export function CommentSection({ tripId }: { tripId: string }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
-  const supabase = createClient();
+  const mountedRef = useRef(true);
 
   const {
     register,
@@ -38,37 +31,60 @@ export function CommentSection({ tripId }: { tripId: string }) {
   });
 
   useEffect(() => {
-    async function loadComments() {
-      const { data } = await supabase
-        .from("comments")
-        .select("*")
-        .eq("trip_id", tripId)
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false });
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-      if (data) setComments(data);
-      setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadComments() {
+      try {
+        const res = await fetch(`/api/comments?trip_id=${encodeURIComponent(tripId)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) {
+          setComments(json.data || []);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
     }
+
     loadComments();
-  }, [tripId, supabase]);
+    return () => { cancelled = true; };
+  }, [tripId]);
 
   const onSubmit = useCallback(
     async (formData: CommentFormData) => {
       setSubmitting(true);
-      const { error } = await supabase.from("comments").insert({
-        trip_id: tripId,
-        author_name: formData.author_name,
-        content: formData.content,
-      });
-
-      if (!error) {
-        reset();
-        setSuccessMsg("评论已提交，审核后将显示");
-        setTimeout(() => setSuccessMsg(""), 3000);
+      try {
+        const res = await fetch("/api/comments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trip_id: tripId, ...formData }),
+        });
+        if (res.ok) {
+          reset();
+          setSuccessMsg("评论已提交，审核后将显示");
+          setTimeout(() => {
+            if (mountedRef.current) setSuccessMsg("");
+          }, 3000);
+          // 乐观刷新评论列表
+          const refreshRes = await fetch(`/api/comments?trip_id=${encodeURIComponent(tripId)}`);
+          if (refreshRes.ok) {
+            const json = await refreshRes.json();
+            if (mountedRef.current) setComments(json.data || []);
+          }
+        }
+      } catch {
+        // 静默失败
       }
       setSubmitting(false);
     },
-    [tripId, supabase, reset]
+    [tripId, reset]
   );
 
   return (
