@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import Link from "next/link";
-import { LayoutDashboard, FileText, Plus, Image } from "lucide-react";
+import { LayoutDashboard, FileText, Plus, Image, Compass } from "lucide-react";
 import { AdminLogoutButton } from "./logout-button";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +22,18 @@ export default async function AdminLayout({
     return <>{children}</>;
   }
 
+  // 行程攻略页 — 独立全屏布局，无侧边栏
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  if (pathname.startsWith("/admin/guide")) {
+    return <>{children}</>;
+  }
+
   const navItems = [
     { href: "/admin", label: "总览", icon: LayoutDashboard },
     { href: "/admin/trips", label: "行程管理", icon: FileText },
     { href: "/admin/trips/new", label: "新建行程", icon: Plus },
+    { href: "/admin/guide", label: "行程攻略", icon: Compass },
     { href: "/admin/gallery", label: "画廊管理", icon: Image },
   ];
 

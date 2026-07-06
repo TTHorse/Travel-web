@@ -121,6 +121,29 @@ export default async function TripDetailPage({ params }: Props) {
         </section>
       )}
 
+      {/* 行程足迹（地图标记点） */}
+      {trip.map_points && trip.map_points.length > 0 && (
+        <section className="max-w-3xl mx-auto px-4 py-12 border-t border-white/10">
+          <h2 className="text-2xl font-bold mb-6">行程足迹</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {trip.map_points.map((point) => (
+              <div
+                key={point.id}
+                className="flex items-start gap-2.5 p-3 rounded-lg bg-white/[0.03] border border-white/5 hover:border-white/10 transition-colors"
+              >
+                <MapPin size={14} className="text-orange-400 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm text-white/80 truncate">{point.name}</p>
+                  <p className="text-[11px] text-white/35 mt-0.5">
+                    {point.latitude.toFixed(4)}, {point.longitude.toFixed(4)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 评论区 */}
       <section className="max-w-3xl mx-auto px-4 py-12 border-t border-white/10">
         <CommentSection tripId={trip.id} />

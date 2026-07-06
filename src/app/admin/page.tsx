@@ -1,7 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, FileText, Image, Map } from "lucide-react";
+import { Plus, FileText, Image, Map, Compass } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +46,19 @@ export default async function AdminPage() {
           <div>
             <h3 className="font-semibold text-white">新建旅行</h3>
             <p className="text-white/40 text-sm">撰写新的旅行攻略</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/guide"
+          className="flex items-center gap-4 p-6 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/[0.07] transition-all"
+        >
+          <div className="w-12 h-12 rounded-lg bg-cyan-400/10 flex items-center justify-center">
+            <Compass size={24} className="text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-white">行程攻略</h3>
+            <p className="text-white/40 text-sm">搜索地区，边写攻略边看地图</p>
           </div>
         </Link>
 

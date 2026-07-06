@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useRef, useMemo, useCallback, Suspense } from "react";
+import {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+  Suspense,
+} from "react";
 import { Canvas, useFrame, extend } from "@react-three/fiber";
 import {
   CameraControls,
@@ -10,6 +17,7 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import type { MapPoint } from "@/types/map";
+import { SearchResultMarker } from "./SearchResultMarker";
 
 // ============================================================
 // 常量
@@ -30,6 +38,17 @@ const EARTH_TEXTURE_URL =
   "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg";
 
 type ViewMode = "globe" | "flat";
+
+// ============================================================
+// 搜索目标类型（由外部 AmapSearch 选中后传入）
+// ============================================================
+
+export interface SearchTarget {
+  id: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+}
 
 // ============================================================
 // 坐标转换
@@ -483,9 +502,16 @@ function FlatView({
 interface SceneProps {
   points: MapPoint[];
   viewMode: ViewMode;
+  searchTarget?: SearchTarget | null;
+  onClearSearch?: () => void;
 }
 
-function EarthScene({ points, viewMode }: SceneProps) {
+function EarthScene({
+  points,
+  viewMode,
+  searchTarget,
+  onClearSearch,
+}: SceneProps) {
   const cameraControlsRef = useRef<CameraControls>(null);
   const texture = useTexture(EARTH_TEXTURE_URL);
   const prevModeRef = useRef<ViewMode>(viewMode);
@@ -550,6 +576,51 @@ function EarthScene({ points, viewMode }: SceneProps) {
     if (selected) handleClose();
   }, [selected, handleClose]);
 
+  // ── 外部搜索目标：变化时相机平滑飞行 ──
+  useEffect(() => {
+    if (!searchTarget || !cameraControlsRef.current) return;
+
+    const targetPos: [number, number, number] =
+      viewMode === "flat"
+        ? latLngToPlane(searchTarget.latitude, searchTarget.longitude)
+        : latLngToGlobe(
+            searchTarget.latitude,
+            searchTarget.longitude,
+            MARKER_3D_RADIUS
+          );
+
+    const target = new THREE.Vector3(targetPos[0], targetPos[1], targetPos[2]);
+    let camPos: THREE.Vector3;
+    if (viewMode === "flat") {
+      camPos = new THREE.Vector3(targetPos[0], targetPos[1], 5);
+    } else {
+      const dir = target.clone().normalize();
+      camPos = dir.multiplyScalar(4.5);
+    }
+
+    cameraControlsRef.current.setLookAt(
+      camPos.x,
+      camPos.y,
+      camPos.z,
+      target.x,
+      target.y,
+      target.z,
+      true
+    );
+  }, [searchTarget, viewMode]);
+
+  // ── 搜索结果 3D 坐标（用于渲染标记） ──
+  const searchMarkerPos = useMemo<[number, number, number] | null>(() => {
+    if (!searchTarget) return null;
+    return viewMode === "flat"
+      ? latLngToPlane(searchTarget.latitude, searchTarget.longitude)
+      : latLngToGlobe(
+          searchTarget.latitude,
+          searchTarget.longitude,
+          MARKER_3D_RADIUS
+        );
+  }, [searchTarget, viewMode]);
+
   return (
     <>
       <ambientLight intensity={0.3} />
@@ -588,6 +659,15 @@ function EarthScene({ points, viewMode }: SceneProps) {
         />
       )}
 
+      {/* 搜索结果标记（青色脉冲） */}
+      {searchTarget && searchMarkerPos && (
+        <SearchResultMarker
+          position={searchMarkerPos}
+          name={searchTarget.name}
+          onClose={onClearSearch ?? (() => {})}
+        />
+      )}
+
       {/* 相机控制 */}
       <CameraControls
         ref={cameraControlsRef}
@@ -607,9 +687,18 @@ function EarthScene({ points, viewMode }: SceneProps) {
 interface EarthGlobeProps {
   points: MapPoint[];
   className?: string;
+  /** 外部搜索飞行目标（由父组件管理） */
+  searchTarget?: SearchTarget | null;
+  /** 清除搜索回调 */
+  onClearSearch?: () => void;
 }
 
-export function EarthGlobe({ points, className }: EarthGlobeProps) {
+export function EarthGlobe({
+  points,
+  className,
+  searchTarget,
+  onClearSearch,
+}: EarthGlobeProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("globe");
 
   return (
@@ -620,7 +709,12 @@ export function EarthGlobe({ points, className }: EarthGlobeProps) {
         style={{ width: "100%", height: "100%" }}
       >
         <Suspense fallback={null}>
-          <EarthScene points={points} viewMode={viewMode} />
+          <EarthScene
+            points={points}
+            viewMode={viewMode}
+            searchTarget={searchTarget}
+            onClearSearch={onClearSearch}
+          />
         </Suspense>
       </Canvas>
 

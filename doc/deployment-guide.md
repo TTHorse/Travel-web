@@ -1,6 +1,6 @@
 # Travel-web 线上部署完整操作指南
 
-> 适用项目：Travel-web（Next.js 16 + React 19 + Supabase + Cloudinary + Mapbox）
+> 适用项目：Travel-web（Next.js 16 + React 19 + Supabase + Cloudinary + Amap）
 >
 > 更新日期：2026-07-01
 
@@ -187,31 +187,6 @@ Dashboard 首页即可看到：
 
 ---
 
-### 1.3 Mapbox（地图服务）
-
-Mapbox 为地图页（`/map`）提供底图瓦片和地理数据。
-
-#### 1.3.1 注册与获取 Token
-
-1. 打开 [mapbox.com](https://mapbox.com)，点击 **Sign Up** 注册。
-2. 进入 Account 页面或 [account.mapbox.com/access-tokens](https://account.mapbox.com/access-tokens)
-3. 系统会自动创建一个 **Default public token**，以 `pk.` 开头。
-4. 如果需要限制 Token 使用范围（推荐生产环境）：
-   - 点击 **Create a token**
-   - 勾选 **URL Restrictions**，填入你的线上域名
-   - 只勾选需要的 Scopes（通常 `styles:tiles` 和 `fonts` 即可）
-5. 复制这个 Token，后续配置 `NEXT_PUBLIC_MAPBOX_TOKEN`
-
-#### 1.3.2 计费说明
-
-Mapbox 免费层每月包含：
-- 50,000 次地图加载（Mobile SDK）/ 网页端 50,000 次请求
-- 超出后按量计费，可设置 **Spending Limit** 防止意外超支
-
-在 [account.mapbox.com/statistics](https://account.mapbox.com/statistics) 可查看用量。
-
----
-
 ## 二、环境变量整理
 
 开发完成后，需要将所有环境变量配置到部署平台。以下是变量清单：
@@ -222,7 +197,7 @@ Mapbox 免费层每月包含：
 |--------|-----|------|:---:|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Supabase → Settings → API → Project URL | ✅ 是 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbG...` | Supabase → Settings → API → anon public key | ✅ 是 |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | `pk.xxxxx...` | Mapbox → Access Tokens | ✅ 是 |
+| `NEXT_PUBLIC_AMAP_WEB_KEY` | `你的高德Web服务Key` | 高德开放平台 → 应用管理 → Web服务 Key | ✅ 是 |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | `your-cloud-name` | Cloudinary Dashboard | ✅ 是 |
 | `CLOUDINARY_API_KEY` | `123456789...` | Cloudinary Dashboard | ❌ 否（仅服务端） |
 | `CLOUDINARY_API_SECRET` | `xxxxx...` | Cloudinary Dashboard | ❌ 否（仅服务端） |
@@ -245,8 +220,8 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=123456789
 CLOUDINARY_API_SECRET=xxxxx
 
-# Mapbox
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoi...
+# Amap（高德地图）Web 服务 Key
+NEXT_PUBLIC_AMAP_WEB_KEY=你的高德Web服务Key
 ```
 
 ### 2.3 在部署平台配置环境变量
@@ -561,8 +536,8 @@ docker compose up -d --build
 | 3 | Supabase 表结构完整 | 在 Supabase Table Editor 查看 trips / comments / photos 表是否存在 | ☐ |
 | 4 | RLS 策略已启用 | 在 Supabase Authentication → Policies 中确认策略存在且状态为 ON | ☐ |
 | 5 | Cloudinary Upload Preset 已创建 | Settings → Upload → Upload presets | ☐ |
-| 6 | Mapbox Token 有效 | 本地 `NEXT_PUBLIC_MAPBOX_TOKEN` 环境变量配置后，访问 `/map` 页面不报 token 错误 | ☐ |
-| 7 | `next.config.ts` images 域名白名单 | 确认 remotePatterns 包含 `res.cloudinary.com`、`api.mapbox.com`、`images.unsplash.com` | ☐ |
+| 6 | Amap Web Key 有效 | 本地 `NEXT_PUBLIC_AMAP_WEB_KEY` 环境变量配置后，地图页搜索可返回建议 | ☐ |
+| 7 | `next.config.ts` images 域名白名单 | 确认 remotePatterns 包含 `res.cloudinary.com`、`images.unsplash.com` | ☐ |
 | 8 | `.env*` 在 `.gitignore` 中 | `git status` 无 env 文件出现 | ☐ |
 | 9 | Supabase Auth 回调 URL 已配置 | Authentication → URL Configuration → Redirect URLs 包含 `https://你的域名/api/auth/callback` | ☐ |
 | 10 | 管理员账号已创建 | Supabase → Authentication → Users 中至少有一个通过后台创建的用户 | ☐ |
@@ -633,7 +608,7 @@ pm2 restart travel-web
 | 2 | 行程列表 (`/trips`) | 数据从 Supabase 加载，卡片渲染正常 |
 | 3 | 行程详情 (`/trips/[slug]`) | Markdown 内容渲染、图片展示、评论区正常 |
 | 4 | 相册 (`/gallery`) | 图片从 Cloudinary 加载、lightbox 交互正常 |
-| 5 | 地图 (`/map`) | 3D 地球渲染、地图交互正常，无 Mapbox token 报错 |
+| 5 | 地图 (`/map`) | 3D 地球渲染、地图交互正常，地点搜索可定位 |
 | 6 | 后台 (`/admin`) | 未登录自动跳转登录页 |
 | 7 | 登录 (`/admin/login`) | Supabase 认证正常，登录后进入后台 |
 | 8 | 评论功能 | 提交评论后能在 Supabase 表中查到记录 |
@@ -735,7 +710,7 @@ npm audit fix
 | 密钥 | 轮换方式 |
 |------|---------|
 | Supabase anon key | Settings → API → 生成新 key |
-| Mapbox token | Access tokens → 创建新 token → 替换 → 删除旧 token |
+| Amap Web Key | 应用管理 → 创建新 Key → 替换 → 删除旧 Key |
 | Cloudinary API Secret | Settings → Security → Regenerate |
 
 > 每次更换后需同步更新部署平台的环境变量并重新部署。
@@ -763,7 +738,7 @@ npm install @sentry/nextjs
 |------|---------|---------------|
 | Supabase | 500MB DB, 50K MAU | [supabase.com/dashboard](https://supabase.com/dashboard) |
 | Cloudinary | 25GB 存储, 25GB 带宽/月 | [cloudinary.com/console](https://cloudinary.com/console) |
-| Mapbox | 50K 请求/月 | [account.mapbox.com/statistics](https://account.mapbox.com/statistics) |
+| Amap | 输入提示/POI 搜索各 5000 次/日 | [console.amap.com](https://console.amap.com) |
 | Vercel | 100GB 带宽, 6K 构建分钟/月 | [vercel.com/dashboard](https://vercel.com/dashboard) |
 
 ### 7.6 更新部署流程总结
@@ -780,7 +755,7 @@ npm install @sentry/nextjs
 
 **可能原因：**
 - 环境变量未正确配置，前端未拿到 key
-- Three.js / Mapbox 等第三方包 SSR 问题
+- Three.js 等第三方包 SSR 问题
 
 **排查步骤：**
 1. 打开浏览器 DevTools → Console，查看具体错误信息
@@ -802,13 +777,13 @@ npm install @sentry/nextjs
 ### 8.3 地图页 3D 地球不渲染
 
 **可能原因：**
-- Mapbox Token 无效或过期
-- Three.js 依赖在服务端报错
+- Three.js 依赖在服务端报错（Canvas 需要浏览器环境）
+- 地球贴图 URL（threejs.org）加载失败
 
 **排查步骤：**
-1. 打开 DevTools → Console 看是否有 Mapbox 相关错误
-2. 检查 `NEXT_PUBLIC_MAPBOX_TOKEN` 是否正确配置
-3. 确认 Mapbox Account 中 Token 状态正常，未被删除
+1. 打开 DevTools → Console 看是否有 Three.js / WebGL 相关错误
+2. 确认组件使用了动态导入：`dynamic(() => import('./EarthGlobe'), { ssr: false })`
+3. 检查 Network 面板，确认地球贴图 `earth_atmos_2048.jpg` 是否加载成功
 
 ### 8.4 数据库操作失败 / 无数据
 

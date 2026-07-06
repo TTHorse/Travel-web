@@ -1,5 +1,7 @@
 # 旅游记录网站 · 可行性分析与代码实现路线图
 
+> ⚠️ 历史分析文档（2026-06-12）：其中 Mapbox 相关分析与代码模板已废弃，项目改用 Three.js EarthGlobe + 高德 Web 服务 API（见 `development-log.md` 阶段 11 与 `Earth.md`）。本文保留作为原始分析记录。
+
 > 分析日期：2026-06-12
 > 基于现有方案 `travel-website-plan.md` 的深度可行性审查
 

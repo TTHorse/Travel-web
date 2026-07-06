@@ -296,6 +296,8 @@ npm run dev
 
 ### 阶段 10：3D 地球实现（Mapbox Globe）
 
+> ⚠️ 本阶段方案已被阶段 11 取代（Mapbox 方案废弃，改用 Three.js EarthGlobe）。以下内容为当时记录，保留作历史。
+
 **需求来源：** `doc/Earth.md` — 在地图页面增加可滚动/缩放的 3D 地球，标记云南为"已去过"
 
 **方案选型：** 方案 A — Mapbox GL JS 3D Globe（`projection: 'globe'`）

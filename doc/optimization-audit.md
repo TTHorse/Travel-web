@@ -22,7 +22,7 @@
 本项目已完成基础框架搭建，涵盖首页、旅行列表、地图、画廊占位、管理后台等核心页面，技术栈选型合理（Next.js 16 + Turbopack + Three.js + Supabase + Cloudinary）。但在代码实现层面仍存在以下问题：
 
 - **关键页面缺失**：旅行详情页 `/trips/[slug]/page.tsx` 不存在
-- **大依赖未拆分**：Three.js、GSAP、Mapbox 等重型库未做动态导入，污染全量 bundle
+- **大依赖未拆分**：Three.js、GSAP 等重型库未做动态导入，污染全量 bundle
 - **安全漏洞**：认证回调存在开放重定向风险
 - **架构不一致**：评论提交绕过 API Route 直连 Supabase
 - **SEO 不完整**：缺少 OG/Twitter 卡片、结构化数据
@@ -82,7 +82,7 @@ return NextResponse.redirect(new URL(redirectTo, request.url))
 
 ### 2.3 重型依赖未做代码分割
 
-**涉及库**：`three`、`@react-three/fiber`、`@react-three/drei`、`gsap`、`mapbox-gl`、`react-map-gl`
+**涉及库**：`three`、`@react-three/fiber`、`@react-three/drei`、`gsap`
 
 **现状**：这些库在各自组件文件中直接 `import`，由于 Next.js 的 bundle 策略，它们可能被打包到共享 chunk 中，导致所有页面都下载这些重型依赖。
 
@@ -120,8 +120,6 @@ transpilePackages: [
   '@react-three/drei',
   'gsap',
   '@gsap/react',
-  'mapbox-gl',
-  'react-map-gl',
 ],
 ```
 
@@ -313,7 +311,6 @@ export const metadata: Metadata = {
 images: {
   remotePatterns: [
     { protocol: 'https', hostname: 'res.cloudinary.com' },
-    { protocol: 'https', hostname: 'api.mapbox.com' },
     { protocol: 'https', hostname: 'images.unsplash.com' }, // 补充
   ],
   minimumCacheTTL: 604800, // 7 天缓存
@@ -428,14 +425,12 @@ console.error('Trips API error:', error)
 | `three` | ~150 KB | 是（仅地图页） |
 | `@react-three/fiber` | ~60 KB | 是（仅地图页） |
 | `@react-three/drei` | ~80 KB | 是（仅地图页） |
-| `mapbox-gl` | ~300 KB | 否（已计划弃用） |
-| `react-map-gl` | ~20 KB | 否（已计划弃用） |
 | `gsap` | ~80 KB | 是（仅首页） |
 | `@gsap/react` | ~1 KB | 是（仅首页） |
 | `framer-motion` | ~50 KB | 部分（页面切换） |
 | `lenis` | ~5 KB | 否（全局） |
 | `@supabase/*` | ~40 KB | 否（按需引入） |
-| **合计** | **~786 KB+** | — |
+| **合计** | **~466 KB+** | — |
 
 ### 优化后预期体积
 
@@ -446,7 +441,7 @@ console.error('Trips API error:', error)
 | 首页 | ~400 KB | ~200 KB | -50% |
 | 旅行列表 | ~400 KB | ~150 KB | -62% |
 | 旅行详情 | ~400 KB | ~150 KB | -62% |
-| 地图 | ~786 KB | ~786 KB | 0（本就在该页） |
+| 地图 | ~466 KB | ~466 KB | 0（本就在该页） |
 | 画廊 | ~400 KB | ~200 KB | -50% |
 
 ---

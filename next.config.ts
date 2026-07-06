@@ -4,7 +4,6 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "api.mapbox.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
     formats: ["image/avif", "image/webp"],
@@ -18,8 +17,6 @@ const nextConfig: NextConfig = {
     "@react-three/drei",
     "gsap",
     "@gsap/react",
-    "mapbox-gl",
-    "react-map-gl",
     "framer-motion",
     "lenis",
   ],

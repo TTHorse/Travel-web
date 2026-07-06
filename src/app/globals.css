@@ -44,26 +44,6 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* —— Mapbox Popup 样式覆盖 —— */
-.mapboxgl-popup-content {
-  background: rgba(0, 0, 0, 0.85) !important;
-  color: #fff !important;
-  border-radius: 12px !important;
-  padding: 8px 16px !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mapboxgl-popup-tip {
-  border-top-color: rgba(0, 0, 0, 0.85) !important;
-}
-
-.mapboxgl-popup-close-button {
-  color: #fff !important;
-  font-size: 16px;
-  padding: 4px 8px;
-}
-
 /* —— Markdown 内容样式 —— */
 .prose h2 {
   @apply text-2xl font-bold mt-10 mb-4 text-white;

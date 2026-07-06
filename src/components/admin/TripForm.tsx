@@ -1,17 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CloudinaryUpload } from "./CloudinaryUpload";
 import { MapPointsEditor } from "./MapPointsEditor";
+import { DestinationSearchField } from "./DestinationSearchField";
 import { Loader2, Save, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import type { Trip } from "@/types/trip";
 import type { MapPoint } from "@/types/map";
+import type { SearchResult } from "@/types/amap";
+
+// 行程风格标签（多选）
+const TRIP_STYLES = [
+  { key: "特种兵打卡", icon: "⚡", label: "特种兵打卡" },
+  { key: "休闲模式", icon: "☕", label: "休闲模式" },
+  { key: "度假模式", icon: "🏖️", label: "度假模式" },
+  { key: "美食之旅", icon: "🍜", label: "美食之旅" },
+  { key: "文化探索", icon: "🏛️", label: "文化探索" },
+] as const;
+
+/** 从已有 tags 数组解析出已选的风格 key */
+function parseStylesFromTags(tags: string[] | undefined): Set<string> {
+  const styleKeys = new Set<string>(TRIP_STYLES.map((s) => s.key));
+  return new Set((tags ?? []).filter((t) => styleKeys.has(t)));
+}
 
 interface TripFormProps {
   initialData?: Trip;
   isEdit: boolean;
+  /** 启用后，「目的地」字段变为搜索框，选中地区触发 onRegionSelect */
+  enableRegionSearch?: boolean;
+  /** 地区搜索选中回调（携带经纬度，供外部地图飞行） */
+  onRegionSelect?: (result: SearchResult) => void;
+  /** mapPoints 变更镜像回调，供外部地图实时显示标记点 */
+  onMapPointsChange?: (points: MapPoint[]) => void;
 }
 
 type FormData = {
@@ -37,12 +60,31 @@ function slugify(text: string): string {
     .trim();
 }
 
-export function TripForm({ initialData, isEdit }: TripFormProps) {
+export function TripForm({
+  initialData,
+  isEdit,
+  enableRegionSearch = false,
+  onRegionSelect,
+  onMapPointsChange,
+}: TripFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mapPoints, setMapPoints] = useState<MapPoint[]>(
     initialData?.map_points ?? []
+  );
+
+  const [selectedStyles, setSelectedStyles] = useState<Set<string>>(() =>
+    parseStylesFromTags(initialData?.tags)
+  );
+
+  // mapPoints 变更：本地状态 + 镜像到父组件
+  const handleMapPointsChange = useCallback(
+    (points: MapPoint[]) => {
+      setMapPoints(points);
+      onMapPointsChange?.(points);
+    },
+    [onMapPointsChange]
   );
 
   const [form, setForm] = useState<FormData>({
@@ -88,10 +130,15 @@ export function TripForm({ initialData, isEdit }: TripFormProps) {
 
     const payload = {
       ...form,
-      tags: form.tags
-        .split(/[,，]/)
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: [
+        ...new Set([
+          ...selectedStyles,
+          ...form.tags
+            .split(/[,，]/)
+            .map((t) => t.trim())
+            .filter(Boolean),
+        ]),
+      ],
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       map_points: mapPoints.map((p, i) => ({
@@ -207,14 +254,22 @@ export function TripForm({ initialData, isEdit }: TripFormProps) {
 
           <div>
             <label className="block text-sm text-white/50 mb-1.5">目的地 *</label>
-            <input
-              type="text"
-              value={form.destination}
-              onChange={(e) => updateField("destination", e.target.value)}
-              placeholder="如：大理"
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500/50 transition-colors"
-            />
+            {enableRegionSearch ? (
+              <DestinationSearchField
+                value={form.destination}
+                onChange={(v) => updateField("destination", v)}
+                onRegionSelect={(r) => onRegionSelect?.(r)}
+              />
+            ) : (
+              <input
+                type="text"
+                value={form.destination}
+                onChange={(e) => updateField("destination", e.target.value)}
+                placeholder="如：大理"
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500/50 transition-colors"
+              />
+            )}
           </div>
 
           <div>
@@ -279,6 +334,41 @@ export function TripForm({ initialData, isEdit }: TripFormProps) {
             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500/50 transition-colors"
           />
         </div>
+
+        {/* 行程风格标签（多选胶囊） */}
+        <div>
+          <label className="block text-sm text-white/50 mb-2">行程风格</label>
+          <div className="flex flex-wrap gap-2">
+            {TRIP_STYLES.map((style) => {
+              const active = selectedStyles.has(style.key);
+              return (
+                <button
+                  key={style.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedStyles((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(style.key)) {
+                        next.delete(style.key);
+                      } else {
+                        next.add(style.key);
+                      }
+                      return next;
+                    });
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                    active
+                      ? "bg-orange-500/15 border-orange-400/40 text-orange-300"
+                      : "bg-white/5 border-white/10 text-white/50 hover:text-white/70 hover:border-white/20"
+                  }`}
+                >
+                  <span className="text-xs">{style.icon}</span>
+                  {style.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       {/* 正文 */}
@@ -296,7 +386,7 @@ export function TripForm({ initialData, isEdit }: TripFormProps) {
       {/* 地图标记点 */}
       <section className="space-y-4">
         <h3 className="text-lg font-semibold text-white">地图标记点</h3>
-        <MapPointsEditor value={mapPoints} onChange={setMapPoints} />
+        <MapPointsEditor value={mapPoints} onChange={handleMapPointsChange} />
       </section>
 
       {/* 底部保存按钮 */}

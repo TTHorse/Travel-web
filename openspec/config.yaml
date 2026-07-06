@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 16.2.9 (App Router only, no Pages Router), React 19.2.4, TypeScript 5 strict,
+  Tailwind CSS v4 (@theme inline), Supabase (@supabase/ssr), Cloudinary (next-cloudinary),
+  Three.js (react-three-fiber + drei) for 3D globe, 高德 (Amap) Web API for maps,
+  GSAP + Framer Motion + Lenis for animations, Zod v4 for validation, react-hook-form for forms.
+
+  BANNED: Mapbox GL JS, Pages Router, any type, client-side direct Supabase queries, bare <img> tags.
+
+  All components must accept className?: string and use cn() (clsx + tailwind-merge).
+  Default to Server Components; only add 'use client' for interactivity.
+  Data flows: Supabase → src/lib/data/ → Server Components. Client components hit API Routes.
+  API routes in src/app/api/, shared components in src/components/<domain>/.
+
+  Chinese comments for complex business logic, English for simple logic.
+  Conventional commits: feat/fix/refactor/style/docs/chore.
+
+rules:
+  proposal:
+    - Keep proposals under 600 words
+    - Always include "Capabilities" and "Impact" sections
+    - Reference affected openspec/specs/<domain>/spec.md files
+  design:
+    - Must address Next.js 16 App Router constraints
+    - Must specify Server/Client component boundaries
+    - Must consider Chinese audience requirements (zh-Hans)
+  specs:
+    - Follow OpenSpec delta format: ADDED/MODIFIED/REMOVED Requirements
+    - Every requirement must have at least one Scenario with GIVEN/WHEN/THEN
+    - Use SHALL for normative requirements
+  tasks:
+    - Final phase must be "Verification" with type check + build + manual test steps
+    - Break tasks into chunks of max 2 hours each
