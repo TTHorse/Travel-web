@@ -1,38 +1,8 @@
-# Data Specification
+# Delta for Data
 
-## Requirement: Data Access Layer
+## MODIFIED Requirements
 
-All database queries SHALL be encapsulated in `src/lib/data/`. Direct Supabase queries SHALL NOT appear in components or pages.
-
-#### Scenario: Fetching published trips
-- GIVEN the homepage needs trip data
-- WHEN the page loads
-- THEN `getPublishedTrips()` from `src/lib/data/trips.ts` is called
-
-#### Scenario: Creating a comment
-- GIVEN a visitor submits a comment
-- WHEN the API route processes it
-- THEN `createComment()` from `src/lib/data/comments.ts` handles the insert
-
----
-
-## Requirement: Supabase Client Initialization
-
-Server-side code SHALL use `createClient()` from `src/lib/supabase/server.ts`. Browser code SHALL use `createClient()` from `src/lib/supabase/client.ts`.
-
-#### Scenario: Server Component or Route Handler
-- GIVEN code runs on the server
-- WHEN Supabase access is needed
-- THEN `const supabase = await createClient()` (with await) is used
-
-#### Scenario: Client Component
-- GIVEN code runs in the browser
-- WHEN Supabase access is needed
-- THEN `const supabase = createClient()` (without await) is used
-
----
-
-## Requirement: Database Schema
+### Requirement: Database Schema
 
 The system SHALL use five core tables: `trips`, `photos`, `comments`, `ai_guides`, `profiles`. Tables SHALL use snake_case naming with `_at` suffixed timestamp columns. Content-bearing tables (`trips`, `ai_guides`) SHALL include `user_id UUID REFERENCES auth.users(id)` to establish ownership.
 
@@ -61,22 +31,11 @@ The system SHALL use five core tables: `trips`, `photos`, `comments`, `ai_guides
 - WHEN the user first interacts with the system
 - THEN a corresponding row in `profiles` exists with `user_id` matching their auth UID
 
----
-
-## Requirement: Type Safety
-
-Database query return types SHALL be inferred from Supabase client types. Manual interface definitions SHALL NOT duplicate database column types.
-
-#### Scenario: Type inference
-- GIVEN a Supabase query returns data
-- WHEN the type is needed
-- THEN it is derived from the generated database types, not hand-written
-
----
-
-## Requirement: RLS Policies
+### Requirement: RLS Policies
 
 Published content (`is_published = true`, `is_approved = true`) SHALL be readable by anyone. Write operations SHALL be restricted to the owning user OR an admin (profiles.role = 'admin'). Admin access SHALL be verified via `EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin')`.
+
+(Previously: Write operations required only authentication — any authenticated user could modify any row.)
 
 #### Scenario: Public read of published trips
 - GIVEN an unauthenticated visitor
@@ -103,9 +62,9 @@ Published content (`is_published = true`, `is_approved = true`) SHALL be readabl
 - WHEN the photo's `trip_id` references a trip they own (or they are admin)
 - THEN the insert succeeds; otherwise RLS blocks it
 
----
+## ADDED Requirements
 
-## Requirement: User-Based Ownership
+### Requirement: User-Based Ownership
 
 Every content record in `trips` and `ai_guides` SHALL be owned by exactly one user, identified by `user_id`. Ownership SHALL be immutable after creation (set at INSERT time, never updated).
 
@@ -124,9 +83,7 @@ Every content record in `trips` and `ai_guides` SHALL be owned by exactly one us
 - WHEN access control is evaluated
 - THEN ownership is checked through the `trip_id` foreign key to `trips.user_id`
 
----
-
-## Requirement: Admin Role via Profiles
+### Requirement: Admin Role via Profiles
 
 The system SHALL use a `profiles` table to store user roles. The `role` column SHALL accept values `'user'` (default) and `'admin'`. Admin status SHALL be checked in RLS policies and API routes for privileged operations.
 
@@ -145,9 +102,7 @@ The system SHALL use a `profiles` table to store user roles. The `role` column S
 - WHEN they query trips from the admin panel
 - THEN only rows where `user_id = auth.uid()` are returned
 
----
-
-## Requirement: Profiles Data Access
+### Requirement: Profiles Data Access
 
 The system SHALL provide data access functions in `src/lib/data/profiles.ts` for querying and managing the `profiles` table.
 

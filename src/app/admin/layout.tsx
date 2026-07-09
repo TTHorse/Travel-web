@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/data/profiles";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { LayoutDashboard, FileText, Plus, Image, Compass } from "lucide-react";
@@ -21,6 +22,10 @@ export default async function AdminLayout({
   if (!user) {
     return <>{children}</>;
   }
+
+  // 读取用户角色（自动创建 profile — 如果不存在）
+  const profile = await getCurrentProfile();
+  const roleLabel = profile?.role === "admin" ? "管理员" : "用户";
 
   // 行程攻略页 — 独立全屏布局，无侧边栏
   const headersList = await headers();
@@ -55,7 +60,8 @@ export default async function AdminLayout({
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          <p className="text-xs text-white/30 mb-2 truncate">{user.email}</p>
+          <p className="text-xs text-white/30 mb-1 truncate">{user.email}</p>
+          <p className="text-xs text-orange-400/60 mb-2">{roleLabel}</p>
           <AdminLogoutButton />
         </div>
       </aside>

@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdmin } from "@/lib/data/profiles";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -38,6 +39,22 @@ export async function POST(request: NextRequest) {
 
   if (!trip_id || !url) {
     return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
+  }
+
+  // 验证父 trip 所有权
+  const admin = await isAdmin();
+  const { data: parentTrip } = await supabase
+    .from("trips")
+    .select("user_id")
+    .eq("id", trip_id)
+    .maybeSingle();
+
+  if (!parentTrip) {
+    return NextResponse.json({ error: "关联行程不存在" }, { status: 404 });
+  }
+
+  if (!admin && parentTrip.user_id !== user.id) {
+    return NextResponse.json({ error: "无权向此行程添加照片" }, { status: 403 });
   }
 
   // 获取当前最大 sort_order
@@ -88,6 +105,28 @@ export async function DELETE(request: NextRequest) {
 
   if (!id) {
     return NextResponse.json({ error: "缺少照片 ID" }, { status: 400 });
+  }
+
+  // 验证所有权 — 通过 trip 级联
+  const admin = await isAdmin();
+  const { data: photo } = await supabase
+    .from("photos")
+    .select("trip_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!photo) {
+    return NextResponse.json({ error: "照片不存在" }, { status: 404 });
+  }
+
+  const { data: parentTrip } = await supabase
+    .from("trips")
+    .select("user_id")
+    .eq("id", photo.trip_id)
+    .maybeSingle();
+
+  if (parentTrip && !admin && parentTrip.user_id !== user.id) {
+    return NextResponse.json({ error: "无权删除此照片" }, { status: 403 });
   }
 
   const { error } = await supabase.from("photos").delete().eq("id", id);

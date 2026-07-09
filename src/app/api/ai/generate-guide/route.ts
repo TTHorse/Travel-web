@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { GenerateGuideInputSchema } from "@/types/ai-guide";
 import { buildGuideSystemPrompt } from "@/lib/ai/guide-generator";
 import { createAIGuide } from "@/lib/data/ai-guides";
@@ -14,6 +15,16 @@ const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
  * 避免 @ai-sdk/openai v4 默认走 /v1/responses 不兼容 DeepSeek 的问题
  */
 export async function POST(request: Request) {
+  // ── 验证登录 ──
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+
   // ── 解析 & 校验 ──
   let body: unknown;
   try {
@@ -141,6 +152,7 @@ export async function POST(request: Request) {
               travelerCount: input.travelerCount,
               keywords: input.keywords,
               content: fullContent,
+              userId: user!.id,
             });
           } catch (err) {
             console.error("[generate-guide] 存储失败:", err);

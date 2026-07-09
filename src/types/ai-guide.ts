@@ -15,6 +15,7 @@ export interface AIGuide {
   keywords: string[];
   content: string;
   status: "draft" | "published";
+  user_id: string;
   created_at: string;
   updated_at: string;
 }

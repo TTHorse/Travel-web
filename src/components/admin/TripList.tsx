@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "@/components/ui/Modal";
 import { formatDate } from "@/lib/utils";
-import { Pencil, Trash2, ExternalLink, Loader2, Eye, EyeOff } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, Loader2, Eye, EyeOff, Shield } from "lucide-react";
 import type { Trip } from "@/types/trip";
 
 interface TripListProps {
   trips: Trip[];
+  isAdmin?: boolean;
+  ownerMap?: Record<string, string>;
 }
 
-export function TripList({ trips: initialTrips }: TripListProps) {
+export function TripList({ trips: initialTrips, isAdmin, ownerMap }: TripListProps) {
   const router = useRouter();
   const [trips, setTrips] = useState(initialTrips);
   const [deleteTarget, setDeleteTarget] = useState<Trip | null>(null);
@@ -78,6 +80,11 @@ export function TripList({ trips: initialTrips }: TripListProps) {
               <th className="py-3 px-4 text-xs font-medium text-white/30 uppercase tracking-wider hidden sm:table-cell">
                 日期
               </th>
+              {isAdmin && (
+                <th className="py-3 px-4 text-xs font-medium text-white/30 uppercase tracking-wider hidden md:table-cell">
+                  所有者
+                </th>
+              )}
               <th className="py-3 px-4 text-xs font-medium text-white/30 uppercase tracking-wider">
                 状态
               </th>
@@ -116,6 +123,14 @@ export function TripList({ trips: initialTrips }: TripListProps) {
                     ? ` - ${formatDate(trip.end_date, "MM.dd")}`
                     : ""}
                 </td>
+                {isAdmin && (
+                  <td className="py-3 px-4 text-sm text-white/40 hidden md:table-cell">
+                    <span className="inline-flex items-center gap-1">
+                      <Shield size={12} />
+                      {ownerMap?.[trip.user_id] ?? trip.user_id.slice(0, 8) + "..."}
+                    </span>
+                  </td>
+                )}
                 <td className="py-3 px-4">
                   {trip.is_published ? (
                     <span className="inline-flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">

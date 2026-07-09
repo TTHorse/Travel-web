@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import type { Trip, TripSummary } from "@/types/trip";
 import type { MapPoint } from "@/types/map";
 
@@ -155,5 +155,84 @@ export async function getTravelStats(): Promise<{
     totalTrips: publishedTrips.length,
     totalCountries: uniqueCountries,
     totalCities: uniqueCities,
+  };
+}
+
+// ============================================================
+// 基于用户身份的方法
+// ============================================================
+
+/**
+ * 获取当前用户的所有行程（非管理员使用），包含所有状态
+ */
+export async function getTripsByUser(userId: string): Promise<Trip[]> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .from("trips")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user trips:", error);
+    return [];
+  }
+
+  return (data ?? []).filter(isTrip) as Trip[];
+}
+
+/**
+ * 获取所有行程（管理员使用），使用 service role 绕过 RLS
+ */
+export async function getAllTripsAdmin(): Promise<Trip[]> {
+  const supabase = await createServiceSupabase();
+
+  const { data, error } = await supabase
+    .from("trips")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all trips (admin):", error);
+    return [];
+  }
+
+  return (data ?? []).filter(isTrip) as Trip[];
+}
+
+/**
+ * 获取管理员的全站统计（所有用户、所有状态的行程）
+ */
+export async function getAdminTravelStats(): Promise<{
+  totalTrips: number;
+  totalCountries: number;
+  totalCities: number;
+  totalUsers: number;
+}> {
+  const supabase = await createServiceSupabase();
+
+  const { data: trips } = await supabase
+    .from("trips")
+    .select("country, is_published");
+
+  const allTrips = trips ?? [];
+  const publishedTrips = allTrips.filter((t) => t.is_published);
+  const uniqueCountries = new Set(publishedTrips.map((t) => t.country)).size;
+
+  const { data: cities } = await supabase
+    .from("map_points")
+    .select("name")
+    .eq("type", "visited");
+
+  const { count: userCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true });
+
+  return {
+    totalTrips: allTrips.length,
+    totalCountries: uniqueCountries,
+    totalCities: new Set((cities ?? []).map((c) => c.name)).size,
+    totalUsers: userCount ?? 0,
   };
 }

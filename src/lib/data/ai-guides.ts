@@ -1,4 +1,4 @@
-import { createServiceSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import type { AIGuide } from "@/types/ai-guide";
 
 // ============================================================
@@ -6,7 +6,7 @@ import type { AIGuide } from "@/types/ai-guide";
 // ============================================================
 
 /**
- * 创建一条 AI 生成的攻略记录（使用 service role 绕过 RLS）
+ * 创建一条 AI 生成的攻略记录，关联当前用户
  */
 export async function createAIGuide(input: {
   destination: string;
@@ -17,6 +17,7 @@ export async function createAIGuide(input: {
   travelerCount: string;
   keywords: string[];
   content: string;
+  userId: string;
 }): Promise<AIGuide | null> {
   const supabase = await createServiceSupabase();
 
@@ -31,6 +32,7 @@ export async function createAIGuide(input: {
       traveler_count: input.travelerCount,
       keywords: input.keywords,
       content: input.content,
+      user_id: input.userId,
       status: "published",
     })
     .select()
@@ -45,7 +47,27 @@ export async function createAIGuide(input: {
 }
 
 /**
- * 获取所有 AI 攻略，按创建时间倒序
+ * 获取当前用户的所有 AI 攻略，按创建时间倒序
+ */
+export async function getGuidesByUser(userId: string): Promise<AIGuide[]> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .from("ai_guides")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[ai-guides] 查询列表失败:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as AIGuide[];
+}
+
+/**
+ * 获取所有 AI 攻略（管理员使用），按创建时间倒序
  */
 export async function getAllGeneratedGuides(): Promise<AIGuide[]> {
   const supabase = await createServiceSupabase();

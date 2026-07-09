@@ -14,6 +14,7 @@ export interface Trip {
   end_date: string | null;
   tags: string[];
   is_published: boolean;
+  user_id: string;
   created_at: string;
   updated_at: string;
   photos?: Photo[];

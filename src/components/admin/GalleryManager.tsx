@@ -105,7 +105,8 @@ export function GalleryManager({ photos: initialPhotos, trips }: GalleryManagerP
     });
 
     if (!res.ok) {
-      setError("删除失败");
+      const body = await res.json().catch(() => ({ error: "删除失败" }));
+      setError(body.error || "删除失败");
       setDeleting(null);
       return;
     }

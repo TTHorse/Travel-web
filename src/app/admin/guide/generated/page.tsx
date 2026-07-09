@@ -1,12 +1,29 @@
-import { getAllGeneratedGuides } from "@/lib/data/ai-guides";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { getAllGeneratedGuides, getGuidesByUser } from "@/lib/data/ai-guides";
+import { isAdmin } from "@/lib/data/profiles";
 import { GuideCard } from "@/components/admin/GuideCard";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function GeneratedGuidesPage() {
-  const guides = await getAllGeneratedGuides();
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const admin = await isAdmin();
+
+  // 管理员看全部，普通用户只看自己的
+  const guides = admin
+    ? await getAllGeneratedGuides()
+    : await getGuidesByUser(user.id);
 
   return (
     <div className="min-h-screen bg-black">
@@ -27,6 +44,7 @@ export default async function GeneratedGuidesPage() {
             </h1>
             <p className="text-sm text-white/40 mt-1">
               共 {guides.length} 条攻略
+              {admin && "（全部用户）"}
             </p>
           </div>
 

@@ -1,5 +1,6 @@
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isAdmin } from "@/lib/data/profiles";
 
 // GET /api/trips — 公开：获取已发布的行程列表
 export async function GET() {
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Slug "${slug}" 已被使用，请换一个` }, { status: 409 });
     }
 
-    // 创建 trip
+    // 创建 trip — 包含 user_id
     const { data: trip, error: tripError } = await supabase
       .from("trips")
       .insert({
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
         end_date: end_date || null,
         tags: tags || [],
         is_published: is_published ?? false,
+        user_id: user.id,
       })
       .select()
       .single();
@@ -149,6 +151,22 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "缺少行程 ID" }, { status: 400 });
     }
 
+    // 验证所有权 — 检查 trip 是否属于当前用户或当前用户是管理员
+    const admin = await isAdmin();
+    const { data: existingTrip, error: fetchError } = await supabase
+      .from("trips")
+      .select("user_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (fetchError || !existingTrip) {
+      return NextResponse.json({ error: "行程不存在" }, { status: 404 });
+    }
+
+    if (!admin && existingTrip.user_id !== user.id) {
+      return NextResponse.json({ error: "无权编辑此行程" }, { status: 403 });
+    }
+
     if (!title || !slug || !destination || !country) {
       return NextResponse.json({ error: "标题、Slug、目的地和国家为必填项" }, { status: 400 });
     }
@@ -170,7 +188,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: `Slug "${slug}" 已被使用，请换一个` }, { status: 409 });
     }
 
-    // 更新 trip
+    // 更新 trip（不更新 user_id — 所有权不可变）
     const { data: trip, error: tripError } = await supabase
       .from("trips")
       .update({
@@ -247,6 +265,22 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json({ error: "缺少行程 ID" }, { status: 400 });
+    }
+
+    // 验证所有权
+    const admin = await isAdmin();
+    const { data: existingTrip } = await supabase
+      .from("trips")
+      .select("user_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!existingTrip) {
+      return NextResponse.json({ error: "行程不存在" }, { status: 404 });
+    }
+
+    if (!admin && existingTrip.user_id !== user.id) {
+      return NextResponse.json({ error: "无权删除此行程" }, { status: 403 });
     }
 
     // 级联删除：先删关联数据
