@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, LogIn } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -81,6 +82,15 @@ export default function AdminLoginPage() {
             <p className="text-red-400 text-sm text-center">{error}</p>
           )}
 
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-white/30 hover:text-white/50 transition-colors"
+            >
+              忘记密码？
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -94,6 +104,13 @@ export default function AdminLoginPage() {
             {loading ? "登录中..." : "登录"}
           </button>
         </form>
+
+        <p className="text-center text-sm text-white/30 mt-6">
+          还没有账号？{" "}
+          <Link href="/register" className="text-white/60 hover:text-white transition-colors">
+            立即注册
+          </Link>
+        </p>
       </div>
     </div>
   );

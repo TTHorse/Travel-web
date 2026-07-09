@@ -2,7 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { LayoutDashboard, FileText, Plus, Image, Compass } from "lucide-react";
+import { LayoutDashboard, FileText, Plus, Image, Compass, Settings } from "lucide-react";
 import { AdminLogoutButton } from "./logout-button";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +40,7 @@ export default async function AdminLayout({
     { href: "/admin/trips/new", label: "新建行程", icon: Plus },
     { href: "/admin/guide", label: "行程攻略", icon: Compass },
     { href: "/admin/gallery", label: "画廊管理", icon: Image },
+    { href: "/admin/settings", label: "设置", icon: Settings },
   ];
 
   return (
