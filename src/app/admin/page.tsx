@@ -3,7 +3,7 @@ import { getAdminTravelStats, getTravelStats } from "@/lib/data/trips";
 import { isAdmin } from "@/lib/data/profiles";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, FileText, Image, Map, Compass } from "lucide-react";
+import { Plus, FileText, Image, Compass } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -107,18 +107,6 @@ export default async function AdminPage() {
           </div>
         </Link>
 
-        <Link
-          href="/map"
-          className="flex items-center gap-4 p-6 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/[0.07] transition-all"
-        >
-          <div className="w-12 h-12 rounded-lg bg-pink-400/10 flex items-center justify-center">
-            <Map size={24} className="text-pink-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white">地图管理</h3>
-            <p className="text-white/40 text-sm">管理地图标记点</p>
-          </div>
-        </Link>
       </div>
     </div>
   );

@@ -38,7 +38,7 @@ export default async function AdminLayout({
     { href: "/admin", label: "总览", icon: LayoutDashboard },
     { href: "/admin/trips", label: "行程管理", icon: FileText },
     { href: "/admin/trips/new", label: "新建行程", icon: Plus },
-    { href: "/admin/guide", label: "行程攻略", icon: Compass },
+    { href: "/admin/guide", label: "我的攻略", icon: Compass },
     { href: "/admin/gallery", label: "画廊管理", icon: Image },
     { href: "/admin/settings", label: "设置", icon: Settings },
   ];

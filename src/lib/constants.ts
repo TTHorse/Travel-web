@@ -2,8 +2,6 @@ export const NAV_LINKS = [
   { href: "/", label: "首页" },
   { href: "/trips", label: "旅行" },
   { href: "/gallery", label: "画廊" },
-  { href: "/map", label: "地图" },
-  { href: "/admin/guide/generated", label: "攻略" },
 ] as const;
 
 export const SITE_CONFIG = {
