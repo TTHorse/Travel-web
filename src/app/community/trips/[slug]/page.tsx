@@ -1,0 +1,180 @@
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import Image from "next/image";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { getCommunityTripBySlug } from "@/lib/data/community";
+import { MarkdownRenderer } from "@/components/trip/MarkdownRenderer";
+import { PhotoGallery } from "@/components/gallery/PhotoGallery";
+import { AuthorCard } from "@/components/community/AuthorCard";
+import { LikeButton } from "@/components/community/LikeButton";
+import { FavoriteButton } from "@/components/community/FavoriteButton";
+import { CommentSection } from "@/components/community/CommentSection";
+import { Calendar, MapPin } from "lucide-react";
+import { formatDateRange } from "@/lib/utils";
+
+interface Props {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const trip = await getCommunityTripBySlug(slug);
+    if (!trip) return { title: "未找到" };
+
+    return {
+      title: `${trip.title} - 社区`,
+      description:
+        trip.description || `在${trip.destination}的旅行记录`,
+      openGraph: {
+        images: trip.cover_image ? [trip.cover_image] : [],
+      },
+    };
+  } catch {
+    return { title: "旅行详情" };
+  }
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function CommunityTripDetailPage({ params }: Props) {
+  const { slug } = await params;
+
+  // 获取当前用户 session
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const trip = await getCommunityTripBySlug(slug, user?.id);
+
+  if (!trip) {
+    notFound();
+  }
+
+  const coverUrl =
+    trip.cover_image ||
+    "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=2400&auto=format&fit=crop";
+  const loggedIn = !!user;
+
+  return (
+    <article>
+      {/* 封面大图 */}
+      <div className="relative h-[60vh] min-h-[400px] overflow-hidden">
+        <Image
+          src={coverUrl}
+          alt={trip.title}
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 max-w-5xl mx-auto">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            {trip.title}
+          </h1>
+          <div className="flex flex-wrap gap-4 text-white/70">
+            <span className="flex items-center gap-1.5">
+              <MapPin size={16} />
+              {trip.destination}, {trip.country}
+            </span>
+            {(trip.start_date || trip.end_date) && (
+              <span className="flex items-center gap-1.5">
+                <Calendar size={16} />
+                {formatDateRange(trip.start_date, trip.end_date)}
+              </span>
+            )}
+          </div>
+          {trip.tags && trip.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {trip.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="bg-white/10 backdrop-blur-sm text-white/70 text-xs px-3 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 作者卡片 + 互动按钮 */}
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <AuthorCard
+            userId={trip.author_user_id}
+            displayName={trip.author_display_name}
+          />
+
+          <div className="flex items-center gap-2">
+            <LikeButton
+              tripId={trip.id}
+              initialLiked={trip.has_liked}
+              initialCount={trip.likes_count}
+              loggedIn={loggedIn}
+            />
+            <FavoriteButton
+              tripId={trip.id}
+              initialFavorited={trip.has_favorited}
+              initialCount={trip.favorites_count}
+              loggedIn={loggedIn}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 正文内容 */}
+      {trip.content && (
+        <div className="max-w-3xl mx-auto px-4 py-8 border-t border-white/5">
+          <MarkdownRenderer content={trip.content} />
+        </div>
+      )}
+
+      {/* 照片画廊 */}
+      {trip.photos && trip.photos.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-12 border-t border-white/5">
+          <h2 className="text-2xl font-bold mb-8">旅行照片</h2>
+          <PhotoGallery photos={trip.photos} />
+        </section>
+      )}
+
+      {/* 行程足迹 */}
+      {trip.map_points && trip.map_points.length > 0 && (
+        <section className="max-w-3xl mx-auto px-4 py-12 border-t border-white/10">
+          <h2 className="text-2xl font-bold mb-6">行程足迹</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {trip.map_points.map((point) => (
+              <div
+                key={point.id}
+                className="flex items-start gap-2.5 p-3 rounded-lg bg-white/[0.03] border border-white/5 hover:border-white/10 transition-colors"
+              >
+                <MapPin
+                  size={14}
+                  className="text-orange-400 shrink-0 mt-0.5"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm text-white/80 truncate">
+                    {point.name}
+                  </p>
+                  <p className="text-[11px] text-white/35 mt-0.5">
+                    {point.latitude.toFixed(4)},{" "}
+                    {point.longitude.toFixed(4)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 评论区 */}
+      <section className="max-w-3xl mx-auto px-4 py-12 border-t border-white/10">
+        <CommentSection tripId={trip.id} loggedIn={loggedIn} />
+      </section>
+    </article>
+  );
+}

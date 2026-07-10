@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { createComment } from "@/lib/data/comments";
 import { NextResponse } from "next/server";
 
 // GET /api/comments?trip_id=xxx
@@ -27,20 +28,27 @@ export async function GET(request: Request) {
   return NextResponse.json({ data });
 }
 
-// POST /api/comments
+// POST /api/comments — 需认证：发表评论
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { trip_id, author_name, content } = body;
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!trip_id || !author_name || !content) {
+    if (authError || !user) {
+      return NextResponse.json({ error: "请先登录" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { trip_id, content } = body;
+
+    if (!trip_id || !content) {
       return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
     }
 
     // 内容长度校验
-    if (author_name.length > 50) {
-      return NextResponse.json({ error: "昵称不能超过50字" }, { status: 400 });
-    }
     if (content.length > 2000) {
       return NextResponse.json({ error: "评论不能超过2000字" }, { status: 400 });
     }
@@ -58,20 +66,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "不允许的请求来源" }, { status: 403 });
     }
 
-    const supabase = await createServerSupabase();
+    const result = await createComment(trip_id, user.id, content);
 
-    const { data, error } = await supabase
-      .from("comments")
-      .insert({ trip_id, author_name, content })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Comment insert error:", error);
-      return NextResponse.json({ error: "评论提交失败" }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || "评论提交失败" }, { status: 500 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json({ data: result.data }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }

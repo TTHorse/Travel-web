@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Link from "next/link";
 import { Send, User, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { Comment } from "@/types/comment";
 
 const commentSchema = z.object({
-  author_name: z.string().min(1, "请输入昵称").max(50, "昵称不能超过50字"),
   content: z.string().min(1, "请输入评论内容").max(1000, "评论不能超过1000字"),
 });
 
@@ -19,6 +20,7 @@ export function CommentSection({ tripId }: { tripId: string }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
   const mountedRef = useRef(true);
 
   const {
@@ -29,6 +31,24 @@ export function CommentSection({ tripId }: { tripId: string }) {
   } = useForm<CommentFormData>({
     resolver: zodResolver(commentSchema),
   });
+
+  // 检查登录状态
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (mountedRef.current) setLoggedIn(!!data.session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mountedRef.current) setLoggedIn(!!session);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -59,32 +79,36 @@ export function CommentSection({ tripId }: { tripId: string }) {
 
   const onSubmit = useCallback(
     async (formData: CommentFormData) => {
+      if (!loggedIn) return;
       setSubmitting(true);
       try {
         const res = await fetch("/api/comments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trip_id: tripId, ...formData }),
+          body: JSON.stringify({ trip_id: tripId, content: formData.content }),
         });
         if (res.ok) {
           reset();
-          setSuccessMsg("评论已提交，审核后将显示");
+          setSuccessMsg("评论发表成功");
           setTimeout(() => {
             if (mountedRef.current) setSuccessMsg("");
           }, 3000);
-          // 乐观刷新评论列表
+          // 刷新评论列表
           const refreshRes = await fetch(`/api/comments?trip_id=${encodeURIComponent(tripId)}`);
           if (refreshRes.ok) {
             const json = await refreshRes.json();
             if (mountedRef.current) setComments(json.data || []);
           }
+        } else {
+          const err = await res.json();
+          setSuccessMsg(err.error || "评论提交失败");
         }
       } catch {
         // 静默失败
       }
       setSubmitting(false);
     },
-    [tripId, reset]
+    [tripId, reset, loggedIn]
   );
 
   return (
@@ -93,52 +117,55 @@ export function CommentSection({ tripId }: { tripId: string }) {
         评论{loading ? "" : ` (${comments.length})`}
       </h2>
 
-      {/* 评论表单 */}
-      <form onSubmit={handleSubmit(onSubmit)} className="mb-10 space-y-4">
-        <div>
-          <input
-            {...register("author_name")}
-            placeholder="你的昵称"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors"
-          />
-          {errors.author_name && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.author_name.message}
+      {/* 评论表单 — 仅登录用户可见 */}
+      {loggedIn ? (
+        <form onSubmit={handleSubmit(onSubmit)} className="mb-10 space-y-4">
+          <div>
+            <textarea
+              {...register("content")}
+              placeholder="分享你的想法..."
+              rows={4}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors resize-none"
+            />
+            {errors.content && (
+              <p className="text-red-400 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
+          </div>
+
+          {successMsg && (
+            <p className={`text-sm ${
+              successMsg.includes("失败") ? "text-red-400" : "text-green-400"
+            }`}>
+              {successMsg}
             </p>
           )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex items-center gap-2 bg-white text-black px-6 py-2.5 rounded-full font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+          >
+            {submitting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Send size={16} />
+            )}
+            {submitting ? "提交中..." : "发表评论"}
+          </button>
+        </form>
+      ) : (
+        <div className="mb-10 p-6 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+          <p className="text-white/40 text-sm">登录后参与评论</p>
+          <Link
+            href="/admin/login"
+            className="inline-block mt-3 text-sm text-orange-400 hover:text-orange-300 transition-colors"
+          >
+            前往登录 →
+          </Link>
         </div>
-
-        <div>
-          <textarea
-            {...register("content")}
-            placeholder="分享你的想法..."
-            rows={4}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors resize-none"
-          />
-          {errors.content && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.content.message}
-            </p>
-          )}
-        </div>
-
-        {successMsg && (
-          <p className="text-green-400 text-sm">{successMsg}</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="flex items-center gap-2 bg-white text-black px-6 py-2.5 rounded-full font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
-        >
-          {submitting ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Send size={16} />
-          )}
-          {submitting ? "提交中..." : "发表评论"}
-        </button>
-      </form>
+      )}
 
       {/* 评论列表 */}
       {loading ? (

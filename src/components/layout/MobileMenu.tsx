@@ -16,6 +16,15 @@ interface MobileMenuProps {
 export function MobileMenu({ open, onClose, loggedIn }: MobileMenuProps) {
   const pathname = usePathname();
 
+  // 导航链接高亮判断
+  const isActiveLink = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/community") {
+      return pathname.startsWith("/community") || pathname.startsWith("/users");
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -49,7 +58,7 @@ export function MobileMenu({ open, onClose, loggedIn }: MobileMenuProps) {
                   href={link.href}
                   className={cn(
                     "px-4 py-3 rounded-xl text-base transition-colors",
-                    pathname === link.href
+                    isActiveLink(link.href)
                       ? "text-white bg-white/10"
                       : "text-white/60 hover:text-white hover:bg-white/5"
                   )}

@@ -1,6 +1,7 @@
 export const NAV_LINKS = [
   { href: "/", label: "首页" },
   { href: "/trips", label: "旅行" },
+  { href: "/community", label: "社区" },
   { href: "/gallery", label: "画廊" },
 ] as const;
 

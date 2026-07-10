@@ -48,6 +48,15 @@ export function Navbar() {
 
   const isHome = pathname === "/";
 
+  // 导航链接高亮判断：社区链接对 /community/* 和 /users/* 也高亮
+  const isActiveLink = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/community") {
+      return pathname.startsWith("/community") || pathname.startsWith("/users");
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <>
       <nav
@@ -73,7 +82,7 @@ export function Navbar() {
                   href={link.href}
                   className={cn(
                     "px-4 py-2 rounded-full text-sm transition-colors",
-                    pathname === link.href
+                    isActiveLink(link.href)
                       ? "text-white bg-white/10"
                       : "text-white/60 hover:text-white hover:bg-white/5"
                   )}

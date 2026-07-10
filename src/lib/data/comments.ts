@@ -19,19 +19,48 @@ export async function getApprovedComments(tripId: string): Promise<Comment[]> {
   return data as Comment[];
 }
 
+/**
+ * 创建评论（社区版 — 需注册用户身份）
+ * author_name 从 profiles 表获取并冗余存储
+ */
 export async function createComment(
   tripId: string,
-  authorName: string,
-  content: string
-): Promise<{ success: boolean; error?: string }> {
+  userId: string,
+  content: string,
+  parentId?: string | null
+): Promise<{ success: boolean; error?: string; data?: Comment }> {
   const supabase = await createServerSupabase();
 
-  const { error } = await supabase.from("comments").insert({
-    trip_id: tripId,
-    author_name: authorName,
-    content,
-  });
+  // 从 profiles 获取 display_name 作为 author_name
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const authorName = profile?.display_name ?? "用户";
+
+  const { data, error } = await supabase
+    .from("comments")
+    .insert({
+      trip_id: tripId,
+      user_id: userId,
+      author_name: authorName,
+      content,
+      parent_id: parentId ?? null,
+    })
+    .select()
+    .single();
 
   if (error) return { success: false, error: error.message };
-  return { success: true };
+  return { success: true, data: data as Comment };
+}
+
+/**
+ * 获取社区评论（与 getApprovedComments 相同，社区语境下的别名）
+ */
+export async function getCommunityComments(
+  tripId: string
+): Promise<Comment[]> {
+  return getApprovedComments(tripId);
 }
