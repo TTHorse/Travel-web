@@ -16,7 +16,22 @@ export async function getApprovedComments(tripId: string): Promise<Comment[]> {
     return [];
   }
 
-  return data as Comment[];
+  // 批量获取评论者头像
+  const userIds = [...new Set((data ?? []).map((c) => c.user_id))];
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, avatar_url")
+    .in("user_id", userIds);
+
+  const avatarMap = new Map<string, string | null>();
+  for (const p of profiles ?? []) {
+    avatarMap.set(p.user_id, p.avatar_url);
+  }
+
+  return (data ?? []).map((c) => ({
+    ...c,
+    author_avatar_url: avatarMap.get(c.user_id) ?? null,
+  })) as Comment[];
 }
 
 /**

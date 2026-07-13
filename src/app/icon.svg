@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- 天空渐变背景 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e" />
+      <stop offset="100%" stop-color="#16213e" />
+    </linearGradient>
+    <linearGradient id="ocean" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f3460" />
+      <stop offset="100%" stop-color="#0a2647" />
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <linearGradient id="sail" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+  </defs>
+
+  <!-- 圆形背景 -->
+  <circle cx="50" cy="50" r="48" fill="url(#sky)" />
+  <circle cx="50" cy="50" r="48" stroke="white" stroke-width="2" opacity="0.15" />
+
+  <!-- 落日 / 指南针圆心 -->
+  <circle cx="50" cy="58" r="18" fill="url(#sun)" opacity="0.9" />
+  <circle cx="50" cy="58" r="18" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
+
+  <!-- 指南针十字线 -->
+  <line x1="50" y1="38" x2="50" y2="44" stroke="white" stroke-width="2" opacity="0.5" />
+  <line x1="50" y1="72" x2="50" y2="78" stroke="white" stroke-width="2" opacity="0.5" />
+  <line x1="30" y1="58" x2="36" y2="58" stroke="white" stroke-width="2" opacity="0.5" />
+  <line x1="64" y1="58" x2="70" y2="58" stroke="white" stroke-width="2" opacity="0.5" />
+
+  <!-- 指南针北指针 -->
+  <path d="M50 40 L54 56 L50 52 L46 56 Z" fill="#fff" opacity="0.8" />
+
+  <!-- 海洋波浪 -->
+  <path d="M4 76 Q20 70 36 76 Q52 82 68 76 Q84 70 96 76 L96 96 L4 96 Z" fill="url(#ocean)" opacity="0.8" />
+  <path d="M4 82 Q20 77 36 82 Q52 87 68 82 Q84 77 96 82 L96 96 L4 96 Z" fill="#0a2647" opacity="0.3" />
+
+  <!-- 帆船 -->
+  <!-- 船体 -->
+  <path d="M26 72 L74 72 L68 80 Q50 84 32 80 Z" fill="#e2e8f0" />
+  <path d="M32 80 Q50 84 68 80" stroke="#cbd5e1" stroke-width="1" />
+
+  <!-- 桅杆 -->
+  <line x1="50" y1="72" x2="50" y2="22" stroke="#f8fafc" stroke-width="2" />
+
+  <!-- 主帆 -->
+  <path d="M52 26 L78 58 Q60 62 52 58 Z" fill="url(#sail)" opacity="0.9" />
+
+  <!-- 前帆 -->
+  <path d="M48 26 L24 52 Q38 56 48 52 Z" fill="#fbbf24" opacity="0.6" />
+
+  <!-- 桅顶旗帜 -->
+  <path d="M50 22 L62 18 L58 26 Z" fill="#ef4444" opacity="0.8" />
+</svg>

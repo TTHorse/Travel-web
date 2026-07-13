@@ -102,3 +102,44 @@ export async function getAllProfiles(): Promise<Profile[]> {
 
   return (data ?? []) as Profile[];
 }
+
+export interface UpdateProfileInput {
+  display_name?: string;
+  avatar_url?: string | null;
+}
+
+/**
+ * 更新当前用户的 profile（display_name、avatar_url）
+ */
+export async function updateProfile(
+  input: UpdateProfileInput
+): Promise<Profile | null> {
+  const supabase = await createServerSupabase();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("[profiles] updateProfile: 未登录");
+    return null;
+  }
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (input.display_name !== undefined) updates.display_name = input.display_name;
+  if (input.avatar_url !== undefined) updates.avatar_url = input.avatar_url;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[profiles] updateProfile 失败:", error.message);
+    return null;
+  }
+
+  return data as Profile;
+}

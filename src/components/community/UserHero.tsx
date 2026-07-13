@@ -1,6 +1,7 @@
-import { User, Calendar, MapPin, Heart } from "lucide-react";
+import { Calendar, MapPin, Heart } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { PublicUserProfile } from "@/lib/data/users";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface UserHeroProps {
   profile: PublicUserProfile;
@@ -10,9 +11,11 @@ export function UserHero({ profile }: UserHeroProps) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
       {/* 头像 */}
-      <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 ring-2 ring-white/10">
-        <User size={36} className="text-white/30" />
-      </div>
+      <UserAvatar
+        url={profile.avatar_url}
+        name={profile.display_name}
+        size={80}
+      />
 
       {/* 信息 */}
       <div className="flex-1">

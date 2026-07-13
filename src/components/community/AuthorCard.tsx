@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { User, MapPin, Calendar, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface AuthorCardProps {
   userId: string;
   displayName: string | null;
+  avatarUrl?: string | null;
   className?: string;
 }
 
 export function AuthorCard({
   userId,
   displayName,
+  avatarUrl,
   className,
 }: AuthorCardProps) {
   return (
@@ -21,9 +23,11 @@ export function AuthorCard({
         className
       )}
     >
-      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-white/15 transition-colors">
-        <User size={22} className="text-white/40" />
-      </div>
+      <UserAvatar
+        url={avatarUrl}
+        name={displayName}
+        size={48}
+      />
       <div>
         <p className="text-white text-sm font-medium group-hover:text-orange-400 transition-colors">
           {displayName || "用户"}

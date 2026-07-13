@@ -108,6 +108,7 @@ export default async function CommunityTripDetailPage({ params }: Props) {
           <AuthorCard
             userId={trip.author_user_id}
             displayName={trip.author_display_name}
+            avatarUrl={trip.author_avatar_url}
           />
 
           <div className="flex items-center gap-2">

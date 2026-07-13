@@ -108,3 +108,34 @@ The system SHALL enforce role-based access control at three layers: RLS policies
 - GIVEN an API bug allows a request to bypass the ownership check
 - WHEN the database operation is attempted
 - THEN RLS policies still block the operation if `user_id != auth.uid()` and the user is not admin
+
+---
+
+## Requirement: Profile Update API
+
+The system SHALL provide `GET /api/profile` and `PATCH /api/profile` for authenticated users to read and update their own profile fields (display_name, avatar_url).
+
+#### Scenario: Read current profile
+- GIVEN an authenticated user
+- WHEN they send `GET /api/profile`
+- THEN their current profile is returned
+
+#### Scenario: Valid update
+- GIVEN an authenticated user
+- WHEN they send `PATCH /api/profile` with `{ display_name: "新昵称", avatar_url: "https://..." }`
+- THEN the profile is updated and the updated profile object is returned
+
+#### Scenario: Partial update (display_name only)
+- GIVEN an authenticated user
+- WHEN they send `PATCH /api/profile` with only `{ display_name: "新昵称" }`
+- THEN only display_name is updated, avatar_url is unchanged
+
+#### Scenario: Unauthenticated request
+- GIVEN no valid session
+- WHEN `PATCH /api/profile` is called
+- THEN a 401 Unauthorized response is returned
+
+#### Scenario: Invalid payload
+- GIVEN an authenticated user
+- WHEN they send `PATCH /api/profile` with `{ display_name: "" }`
+- THEN a 400 Bad Request response is returned with a validation error message

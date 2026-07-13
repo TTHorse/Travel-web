@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { Send, User, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Comment } from "@/types/comment";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 const commentSchema = z.object({
   content: z.string().min(1, "请输入评论内容").max(1000, "评论不能超过1000字"),
@@ -180,9 +181,11 @@ export function CommentSection({ tripId }: { tripId: string }) {
         <div className="space-y-6">
           {comments.map((comment) => (
             <div key={comment.id} className="flex gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                <User size={18} className="text-white/40" />
-              </div>
+              <UserAvatar
+                url={comment.author_avatar_url}
+                name={comment.author_name}
+                size={40}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-white text-sm">

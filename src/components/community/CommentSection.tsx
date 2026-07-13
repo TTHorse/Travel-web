@@ -5,8 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { Send, User, Loader2, Reply } from "lucide-react";
+import { Send, Loader2, Reply } from "lucide-react";
 import type { Comment } from "@/types/comment";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 const commentSchema = z.object({
   content: z.string().min(1, "请输入评论内容").max(1000, "评论不能超过1000字"),
@@ -240,9 +241,13 @@ export function CommentSection({ tripId, loggedIn }: CommentSectionProps) {
                 <div className="flex gap-3">
                   <Link
                     href={`/users/${comment.user_id}`}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition-colors"
+                    className="flex-shrink-0 hover:opacity-80 transition-opacity"
                   >
-                    <User size={18} className="text-white/40" />
+                    <UserAvatar
+                      url={comment.author_avatar_url}
+                      name={comment.author_name}
+                      size={40}
+                    />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -318,9 +323,13 @@ export function CommentSection({ tripId, loggedIn }: CommentSectionProps) {
                       <div key={reply.id} className="flex gap-2.5">
                         <Link
                           href={`/users/${reply.user_id}`}
-                          className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition-colors"
+                          className="flex-shrink-0 hover:opacity-80 transition-opacity"
                         >
-                          <User size={13} className="text-white/40" />
+                          <UserAvatar
+                            url={reply.author_avatar_url}
+                            name={reply.author_name}
+                            size={28}
+                          />
                         </Link>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">

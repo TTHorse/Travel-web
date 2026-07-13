@@ -4,6 +4,7 @@ export interface Comment {
   parent_id: string | null;
   user_id: string;
   author_name: string;
+  author_avatar_url: string | null;
   content: string;
   is_approved: boolean;
   created_at: string;

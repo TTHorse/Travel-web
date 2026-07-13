@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { LayoutDashboard, FileText, Plus, Image, Compass, Settings } from "lucide-react";
 import { AdminLogoutButton } from "./logout-button";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +62,20 @@ export default async function AdminLayout({
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          <p className="text-xs text-white/30 mb-1 truncate">{user.email}</p>
-          <p className="text-xs text-orange-400/60 mb-2">{roleLabel}</p>
+          <div className="flex items-center gap-2.5 mb-3">
+            <UserAvatar
+              url={profile?.avatar_url}
+              name={profile?.display_name}
+              size={32}
+            />
+            <div className="min-w-0">
+              <p className="text-sm text-white truncate">
+                {profile?.display_name || "用户"}
+              </p>
+              <p className="text-xs text-white/30 truncate">{user.email}</p>
+              <p className="text-xs text-orange-400/60">{roleLabel}</p>
+            </div>
+          </div>
           <AdminLogoutButton />
         </div>
       </aside>

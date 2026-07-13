@@ -17,6 +17,7 @@ export interface CommunityTripSummary {
   tags: string[];
   user_id: string;
   author_display_name: string | null;
+  author_avatar_url: string | null;
   likes_count: number;
   favorites_count: number;
   comments_count: number;
@@ -25,6 +26,7 @@ export interface CommunityTripSummary {
 
 export interface CommunityTripDetail extends Trip {
   author_display_name: string | null;
+  author_avatar_url: string | null;
   author_user_id: string;
   likes_count: number;
   favorites_count: number;
@@ -68,12 +70,18 @@ export async function getCommunityTrips(
   const userIds = [...new Set(trips.map((t) => t.user_id))];
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("user_id, display_name")
+    .select("user_id, display_name, avatar_url")
     .in("user_id", userIds);
 
-  const profileMap = new Map<string, string | null>();
+  const profileMap = new Map<
+    string,
+    { display_name: string | null; avatar_url: string | null }
+  >();
   for (const p of profiles ?? []) {
-    profileMap.set(p.user_id, p.display_name);
+    profileMap.set(p.user_id, {
+      display_name: p.display_name,
+      avatar_url: p.avatar_url,
+    });
   }
 
   // 批量获取互动计数
@@ -83,13 +91,17 @@ export async function getCommunityTrips(
     getBatchCommentsCounts(tripIds),
   ]);
 
-  const result: CommunityTripSummary[] = trips.map((t) => ({
-    ...t,
-    author_display_name: profileMap.get(t.user_id) ?? null,
-    likes_count: likesCounts.get(t.id) ?? 0,
-    favorites_count: favoritesCounts.get(t.id) ?? 0,
-    comments_count: commentsCounts.get(t.id) ?? 0,
-  }));
+  const result: CommunityTripSummary[] = trips.map((t) => {
+    const profile = profileMap.get(t.user_id);
+    return {
+      ...t,
+      author_display_name: profile?.display_name ?? null,
+      author_avatar_url: profile?.avatar_url ?? null,
+      likes_count: likesCounts.get(t.id) ?? 0,
+      favorites_count: favoritesCounts.get(t.id) ?? 0,
+      comments_count: commentsCounts.get(t.id) ?? 0,
+    };
+  });
 
   // 最热排序：按点赞数降序
   if (sort === "hottest") {
@@ -122,7 +134,7 @@ export async function getCommunityTripBySlug(
   // 获取作者信息
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, avatar_url")
     .eq("user_id", trip.user_id)
     .maybeSingle();
 
@@ -165,6 +177,7 @@ export async function getCommunityTripBySlug(
     photos: photosResult.data ?? [],
     map_points: mapPointsResult.data ?? [],
     author_display_name: profile?.display_name ?? null,
+    author_avatar_url: profile?.avatar_url ?? null,
     author_user_id: trip.user_id,
     likes_count: likesCount,
     favorites_count: favoritesCount,

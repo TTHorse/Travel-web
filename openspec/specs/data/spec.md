@@ -34,7 +34,7 @@ Server-side code SHALL use `createClient()` from `src/lib/supabase/server.ts`. B
 
 ## Requirement: Database Schema
 
-The system SHALL use five core tables: `trips`, `photos`, `comments`, `ai_guides`, `profiles`. Tables SHALL use snake_case naming with `_at` suffixed timestamp columns. Content-bearing tables (`trips`, `ai_guides`) SHALL include `user_id UUID REFERENCES auth.users(id)` to establish ownership.
+The system SHALL use five core tables: `trips`, `photos`, `comments`, `ai_guides`, `profiles`. Tables SHALL use snake_case naming with `_at` suffixed timestamp columns. Content-bearing tables (`trips`, `ai_guides`) SHALL include `user_id UUID REFERENCES auth.users(id)` to establish ownership. The `profiles` table SHALL include `avatar_url TEXT` and `display_name TEXT`, with `display_name` editable by the owning user.
 
 #### Scenario: Querying a trip with photos
 - GIVEN a trip page loads
@@ -60,6 +60,16 @@ The system SHALL use five core tables: `trips`, `photos`, `comments`, `ai_guides
 - GIVEN a user exists in `auth.users`
 - WHEN the user first interacts with the system
 - THEN a corresponding row in `profiles` exists with `user_id` matching their auth UID
+
+#### Scenario: Profile with avatar
+- GIVEN a user has uploaded an avatar
+- WHEN their profile is queried
+- THEN `avatar_url` contains the Cloudinary secure URL of the uploaded image
+
+#### Scenario: Profile without avatar
+- GIVEN a user has not uploaded an avatar
+- WHEN their profile is queried
+- THEN `avatar_url` is NULL and the UI renders a fallback
 
 ---
 
@@ -160,3 +170,18 @@ The system SHALL provide data access functions in `src/lib/data/profiles.ts` for
 - GIVEN an authenticated user
 - WHEN `isAdmin()` is called
 - THEN `true` is returned if `profiles.role = 'admin'`, `false` otherwise
+
+#### Scenario: Updating display name
+- GIVEN an authenticated user
+- WHEN `updateProfile({ display_name: "新昵称" })` is called
+- THEN the `profiles` row for the current user is updated with the new display_name and `updated_at` is refreshed
+
+#### Scenario: Updating avatar
+- GIVEN an authenticated user
+- WHEN `updateProfile({ avatar_url: "https://..." })` is called
+- THEN the `profiles` row for the current user is updated with the new avatar_url
+
+#### Scenario: Updating both fields
+- GIVEN an authenticated user
+- WHEN `updateProfile({ display_name: "...", avatar_url: "..." })` is called
+- THEN both fields are updated atomically in a single UPDATE statement

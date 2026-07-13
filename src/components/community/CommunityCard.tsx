@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Heart, MessageCircle, User } from "lucide-react";
+import { Calendar, MapPin, Heart, MessageCircle } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import type { CommunityTripSummary } from "@/lib/data/community";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export function CommunityCard({ trip }: { trip: CommunityTripSummary }) {
   const coverUrl =
@@ -69,7 +70,11 @@ export function CommunityCard({ trip }: { trip: CommunityTripSummary }) {
                 onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors"
               >
-                <User size={12} />
+                <UserAvatar
+                  url={trip.author_avatar_url}
+                  name={trip.author_display_name}
+                  size={16}
+                />
                 <span>{trip.author_display_name || "用户"}</span>
               </Link>
 

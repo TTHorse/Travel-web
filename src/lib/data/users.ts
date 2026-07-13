@@ -8,6 +8,7 @@ import type { TripSummary } from "@/types/trip";
 export interface PublicUserProfile {
   user_id: string;
   display_name: string | null;
+  avatar_url: string | null;
   created_at: string;
   trip_count: number;
   country_count: number;
@@ -25,7 +26,7 @@ export async function getUserProfile(
   // 获取用户 profile
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("user_id, display_name, created_at")
+    .select("user_id, display_name, avatar_url, created_at")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -53,6 +54,7 @@ export async function getUserProfile(
   return {
     user_id: profile.user_id,
     display_name: profile.display_name,
+    avatar_url: profile.avatar_url,
     created_at: profile.created_at,
     trip_count: publishedTrips.length,
     country_count: uniqueCountries,
